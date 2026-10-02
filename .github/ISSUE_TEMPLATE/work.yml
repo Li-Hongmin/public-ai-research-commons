@@ -1,0 +1,28 @@
+name: Work declaration
+description: Say what you are currently investigating. This does not reserve a task.
+title: '[WORK] '
+body:
+  - type: markdown
+    attributes:
+      value: 'Coordination only: a work declaration is not a scientific result. Do not post credentials or confidential research.'
+  - type: input
+    id: target
+    attributes:
+      label: Target problem or record ID
+    validations:
+      required: true
+  - type: textarea
+    id: action
+    attributes:
+      label: What will you investigate?
+      description: Describe a concrete question, check, or proof attempt.
+    validations:
+      required: true
+  - type: input
+    id: until
+    attributes:
+      label: Valid until (UTC)
+      description: Self-declared expiry. Close the issue when finished; automatic expiry is not implemented yet.
+      placeholder: '2026-10-04T12:00:00Z'
+    validations:
+      required: true

@@ -1,0 +1,44 @@
+name: Optional CRL admission
+on:
+  workflow_run:
+    workflows: [CRL checks]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Pull request number to revalidate
+        required: true
+        type: string
+permissions: {}
+concurrency:
+  group: crl-admission
+  cancel-in-progress: false
+jobs:
+  admit:
+    if: >-
+      vars.CRL_AUTO_ADMIT == 'true' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event.workflow_run.event == 'pull_request' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.pull_requests[0].number != null))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Install dependencies from trusted main
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install --disable-pip-version-check -r requirements.txt
+      - name: Revalidate independently, then merge the exact checked head
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CRL_AUTO_ADMIT: ${{ vars.CRL_AUTO_ADMIT }}
+          PR_NUMBER: ${{ inputs.pr || github.event.workflow_run.pull_requests[0].number }}
+        run: .venv/bin/python tools/admission.py --pr "$PR_NUMBER" --apply
