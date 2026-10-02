@@ -1,0 +1,60 @@
+{
+  "registry_version": "0.1",
+  "updated": "2026-10-03",
+  "scope": "mathematics",
+  "programs": [
+    {
+      "id": "millennium",
+      "title": "Millennium Research Commons",
+      "description": "A public AI-mediated research program using the Millennium Prize Problems as flagship long-term targets.",
+      "authority": {
+        "name": "Clay Mathematics Institute",
+        "url": "https://www.claymath.org/millennium-problems/"
+      },
+      "problems": [
+        {
+          "id": "crl:problem:riemann-hypothesis",
+          "title": "Riemann Hypothesis",
+          "repository": null,
+          "external_status_source": "https://www.claymath.org/millennium-problems/",
+          "crl_status": "not-started"
+        },
+        {
+          "id": "crl:problem:p-vs-np",
+          "title": "P vs NP",
+          "repository": null,
+          "external_status_source": "https://www.claymath.org/millennium-problems/",
+          "crl_status": "not-started"
+        },
+        {
+          "id": "crl:problem:hodge-conjecture",
+          "title": "Hodge Conjecture",
+          "repository": null,
+          "external_status_source": "https://www.claymath.org/millennium-problems/",
+          "crl_status": "not-started"
+        },
+        {
+          "id": "crl:problem:birch-swinnerton-dyer",
+          "title": "Birch and Swinnerton-Dyer Conjecture",
+          "repository": null,
+          "external_status_source": "https://www.claymath.org/millennium-problems/",
+          "crl_status": "not-started"
+        },
+        {
+          "id": "crl:problem:yang-mills-mass-gap",
+          "title": "Yang-Mills and Mass Gap",
+          "repository": null,
+          "external_status_source": "https://www.claymath.org/millennium-problems/",
+          "crl_status": "not-started"
+        },
+        {
+          "id": "crl:problem:navier-stokes",
+          "title": "Navier-Stokes Existence and Smoothness",
+          "repository": null,
+          "external_status_source": "https://www.claymath.org/millennium-problems/",
+          "crl_status": "not-started"
+        }
+      ]
+    }
+  ]
+}
