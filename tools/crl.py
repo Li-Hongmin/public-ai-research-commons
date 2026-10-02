@@ -1,6 +1,7 @@
-"""CRL Commons 0.2: signed records, local context, and a conservative board.
+"""CRL Commons 0.3: Zenodo-backed publications and a minimal signed discovery index.
 
-This module never downloads artifacts, runs research code, or evaluates truth.
+The Commons stores discovery headers, not research bodies. This module never downloads
+Zenodo files, executes research artifacts, or decides scientific truth.
 """
 from __future__ import annotations
 
@@ -11,10 +12,8 @@ import html
 import json
 import os
 import re
-import sys
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlsplit
 
 import rfc8785
 from cryptography.exceptions import InvalidSignature
@@ -22,10 +21,17 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey,
 from jsonschema import Draft202012Validator, FormatChecker, ValidationError
 
 ROOT = Path(__file__).resolve().parents[1]
-MAX_BYTES = 65536
-DOMAIN = b"CRL-COMMONS/0.2\x00"
-ID = re.compile(r"crl:sha256:[0-9a-f]{64}\Z")
-POLICY = {"id": "commons-observations/0.2", "acceptance": "not-implemented", "votes_are_evidence": False}
+MAX_INDEX_BYTES = 32768
+MAX_PUBLICATION_BYTES = 131072
+INDEX_DOMAIN = b"CRL-INDEX/0.3\x00"
+PUBLICATION_DOMAIN = b"CRL-PUBLICATION/0.3\x00"
+RID = re.compile(r"crl:sha256:[0-9a-f]{64}\Z")
+POLICY = {
+    "id": "commons-observations/0.3",
+    "acceptance": "not-implemented",
+    "votes_are_evidence": False,
+    "archive_availability": "not-checked",
+}
 
 
 def require(condition: bool, message: str) -> None:
@@ -45,14 +51,14 @@ def _constant(value: str) -> None:
     raise ValueError("non-finite JSON number")
 
 
-def loads(raw: bytes, limit: int = MAX_BYTES) -> Any:
+def loads(raw: bytes, limit: int) -> Any:
     require(len(raw) <= limit, "input exceeds size limit")
     try:
         value = json.loads(raw.decode("utf-8"), object_pairs_hook=_pairs, parse_constant=_constant)
         stack = [(value, 0)]
         while stack:
             item, depth = stack.pop()
-            require(depth <= 20, "JSON nesting too deep")
+            require(depth <= 24, "JSON nesting too deep")
             if isinstance(item, dict):
                 stack.extend((v, depth + 1) for v in item.values())
             elif isinstance(item, list):
@@ -62,7 +68,7 @@ def loads(raw: bytes, limit: int = MAX_BYTES) -> Any:
         raise ValueError("invalid JSON encoding or nesting") from exc
 
 
-def read_json(path: Path, limit: int = MAX_BYTES) -> Any:
+def read_json(path: Path, limit: int) -> Any:
     require(not path.is_symlink(), "symlinks are not accepted")
     with path.open("rb") as f:
         return loads(f.read(limit + 1), limit)
@@ -76,233 +82,507 @@ def digest(value: Any) -> str:
     return hashlib.sha256(canonical(value)).hexdigest()
 
 
-def record_path(identifier: str) -> Path:
-    require(bool(ID.fullmatch(identifier)), "invalid record identifier")
-    h = identifier.rsplit(":", 1)[1]
+def index_path(record_id: str) -> Path:
+    require(bool(RID.fullmatch(record_id)), "invalid CRL record identifier")
+    h = record_id.rsplit(":", 1)[1]
     return Path(h[:2], h[2:4], h + ".json")
 
 
-def sign(payload: dict, key: Ed25519PrivateKey) -> dict:
-    payload = copy.deepcopy(payload)
-    public = key.public_key().public_bytes_raw().hex()
-    old = payload["actor"].get("public_key")
-    require(not old or old == public, "draft contains a different signing key")
-    payload["actor"]["public_key"] = public
-    raw = canonical(payload)
-    return {"id": "crl:sha256:" + hashlib.sha256(raw).hexdigest(), "payload": payload,
-            "signature": key.sign(DOMAIN + raw).hex()}
-
-
-def validator() -> Draft202012Validator:
-    schema = read_json(ROOT / "spec/record.schema.json")
+def _validator(name: str) -> Draft202012Validator:
+    schema = read_json(ROOT / "spec" / name, MAX_PUBLICATION_BYTES)
     Draft202012Validator.check_schema(schema)
     return Draft202012Validator(schema, format_checker=FormatChecker())
 
 
-VALIDATOR = validator()
+INDEX_VALIDATOR = _validator("index-entry.schema.json")
+PUBLICATION_VALIDATOR = _validator("publication.schema.json")
 
 
-def validate_record(record: dict) -> None:
-    VALIDATOR.validate(record)
-    require(len(canonical(record)) <= MAX_BYTES, "record too large")
-    p = record["payload"]
-    raw = canonical(p)
-    require(record["id"] == "crl:sha256:" + hashlib.sha256(raw).hexdigest(), "content hash mismatch")
+def _private_key(path: Path) -> Ed25519PrivateKey:
+    raw = bytes.fromhex(path.read_text(encoding="ascii").strip())
+    require(len(raw) == 32, "private key must contain 32 raw bytes as hex")
+    return Ed25519PrivateKey.from_private_bytes(raw)
+
+
+def _sign_payload(payload: dict, key: Ed25519PrivateKey, domain: bytes) -> tuple[dict, bytes]:
+    payload = copy.deepcopy(payload)
+    public = key.public_key().public_bytes_raw().hex()
+    actor = payload["actor"]
+    old = actor.get("public_key")
+    require(not old or old == public, "draft contains a different signing key")
+    actor["public_key"] = public
+    raw = canonical(payload)
+    return payload, key.sign(domain + raw)
+
+
+def _verify(payload: dict, signature: str, domain: bytes) -> None:
     try:
-        Ed25519PublicKey.from_public_bytes(bytes.fromhex(p["actor"]["public_key"])).verify(
-            bytes.fromhex(record["signature"]), DOMAIN + raw)
-    except InvalidSignature as exc:
+        Ed25519PublicKey.from_public_bytes(bytes.fromhex(payload["actor"]["public_key"])).verify(
+            bytes.fromhex(signature), domain + canonical(payload)
+        )
+    except (InvalidSignature, ValueError) as exc:
         raise ValueError("invalid signature") from exc
-    for a in p["artifacts"]:
-        u = urlsplit(a["uri"])
-        require(u.scheme == "https" and bool(u.hostname) and not u.username and not u.password,
-                "artifact URI must be HTTPS without credentials")
-    types = [r["type"] for r in p["relations"]]
-    if p["type"] == "QUESTION":
-        require(types.count("subproblem-of") == 1, "QUESTION needs one parent")
-        require(set(types) <= {"subproblem-of", "depends-on", "revises"}, "invalid QUESTION relation")
-    elif p["type"] == "REVIEW":
+
+
+def sign_publication(payload: dict, key: Ed25519PrivateKey) -> dict:
+    payload, signature = _sign_payload(payload, key, PUBLICATION_DOMAIN)
+    rid = "crl:sha256:" + hashlib.sha256(canonical(payload)).hexdigest()
+    return {"id": rid, "payload": payload, "signature": signature.hex()}
+
+
+def _validate_relations(kind: str, relations: list[dict], payload: dict) -> None:
+    types = [r["type"] for r in relations]
+    if kind == "QUESTION":
+        require(types.count("subproblem-of") == 1, "QUESTION needs exactly one parent")
+        require(set(types) <= {"subproblem-of", "depends-on", "revises"},
+                "invalid QUESTION relation")
+    elif kind == "REVIEW":
         require(types.count("reviews") == 1, "REVIEW needs exactly one target")
-        require(set(types) <= {"reviews", "depends-on", "responds-to", "revises"}, "invalid REVIEW relation")
-    elif p["result_kind"] == "withdrawal":
-        require(types == ["withdraws"] and p["answer_scope"] == "none", "withdrawal needs one target and no answer")
+        require(set(types) <= {"reviews", "depends-on", "responds-to", "revises"},
+                "invalid REVIEW relation")
+    elif payload.get("result_kind") == "withdrawal":
+        require(types == ["withdraws"] and payload.get("answer_scope") == "none",
+                "withdrawal needs one target and no answer")
     else:
         require(types.count("addresses") >= 1, "RESULT needs a question target")
-        require(set(types) <= {"addresses", "depends-on", "revises", "responds-to"}, "invalid RESULT relation")
+        require(set(types) <= {"addresses", "depends-on", "revises", "responds-to"},
+                "invalid RESULT relation")
     require(types.count("revises") <= 1, "at most one revision predecessor")
 
 
-def registry_roots(registry: dict) -> dict:
-    return {p["id"]: p for program in registry["programs"] for p in program["problems"]}
+def validate_publication(publication: dict) -> None:
+    PUBLICATION_VALIDATOR.validate(publication)
+    require(len(canonical(publication)) <= MAX_PUBLICATION_BYTES, "publication manifest too large")
+    payload = publication["payload"]
+    raw = canonical(payload)
+    require(publication["id"] == "crl:sha256:" + hashlib.sha256(raw).hexdigest(),
+            "publication content hash mismatch")
+    _verify(payload, publication["signature"], PUBLICATION_DOMAIN)
+    _validate_relations(payload["type"], payload["relations"], payload)
 
 
-def validate_graph(records: dict, registry: dict) -> None:
-    roots = registry_roots(registry)
-    for identifier, record in records.items():
-        validate_record(record)
-        require(identifier == record["id"], "map ID mismatch")
-        p = record["payload"]
-        require(p["problem"] in roots, "root problem not registered")
-        for edge in p["relations"]:
-            target, kind = edge["target"], edge["type"]
-            require(target != identifier, "self-reference")
-            if target in roots:
-                require(target == p["problem"] and kind in {"addresses", "subproblem-of"}, "invalid root relation")
-                continue
-            require(target in records, "missing reference: " + target)
-            q = records[target]["payload"]
-            require(q["problem"] == p["problem"], "cross-problem record resolution is not supported in this profile")
-            allowed = {"addresses": {"QUESTION"}, "subproblem-of": {"QUESTION"},
-                       "depends-on": {"RESULT"}, "reviews": {"RESULT", "REVIEW"},
-                       "responds-to": {"REVIEW"}, "revises": {p["type"]},
-                       "withdraws": {"QUESTION", "RESULT", "REVIEW"}}
-            require(q["type"] in allowed[kind], "relation target has wrong type")
-            if kind == "withdraws":
-                require(q["actor"]["public_key"] == p["actor"]["public_key"], "cannot withdraw someone else's record")
-                require(q.get("result_kind") != "withdrawal", "withdrawal is final for this profile")
-    # Iterative traversal avoids recursion failure on long legitimate lineages.
-    done = set()
-    for start in records:
-        stack = [(start, False)]
-        visiting = set()
-        while stack:
-            current, exiting = stack.pop()
-            if exiting:
-                visiting.remove(current)
-                done.add(current)
-            elif current not in done:
-                require(current not in visiting, "cyclic references")
-                visiting.add(current)
-                stack.append((current, True))
-                stack.extend((e["target"], False) for e in records[current]["payload"]["relations"]
-                             if e["target"] in records)
+def sign_index(payload: dict, key: Ed25519PrivateKey) -> dict:
+    payload, signature = _sign_payload(payload, key, INDEX_DOMAIN)
+    return {"payload": payload, "signature": signature.hex()}
 
 
-def load_records(directory: Path) -> dict:
-    out = {}
+def validate_index(entry: dict) -> None:
+    INDEX_VALIDATOR.validate(entry)
+    require(len(canonical(entry)) <= MAX_INDEX_BYTES, "index entry too large")
+    payload = entry["payload"]
+    _verify(payload, entry["signature"], INDEX_DOMAIN)
+    suffix = payload["archive"]["doi"].rsplit(".", 1)[-1]
+    require(payload["archive"]["url"] == "https://zenodo.org/records/" + suffix,
+            "Zenodo DOI and record URL disagree")
+    _validate_relations(payload["record_type"], payload["relations"], payload)
+
+
+def load_registry(path: Path | None = None) -> dict[str, dict]:
+    path = path or ROOT / "registry" / "problems.json"
+    data = read_json(path, MAX_INDEX_BYTES)
+    roots = {
+        problem["id"]: problem
+        for program in data.get("programs", [])
+        for problem in program.get("problems", [])
+    }
+    require(len(roots) == sum(len(p.get("problems", [])) for p in data.get("programs", [])),
+            "duplicate root problem")
+    return roots
+
+
+def load_index(directory: Path | None = None) -> dict[str, dict]:
+    directory = directory or ROOT / "index"
+    out: dict[str, dict] = {}
     if not directory.exists():
         return out
-    require(not directory.is_symlink(), "record directory cannot be a symlink")
+    require(not directory.is_symlink(), "index directory cannot be a symlink")
     for current, dirs, files in os.walk(directory, followlinks=False):
         require(all(not (Path(current) / d).is_symlink() for d in dirs), "symlink directory")
         for name in files:
             path = Path(current) / name
             if name == ".gitkeep":
                 continue
-            require(name.endswith(".json"), "non-JSON file in records")
-            record = read_json(path)
-            validate_record(record)
-            require(path.relative_to(directory) == record_path(record["id"]), "record filename mismatch")
-            require(record["id"] not in out, "duplicate record")
-            out[record["id"]] = record
+            require(name.endswith(".json"), "non-JSON file in index")
+            entry = read_json(path, MAX_INDEX_BYTES)
+            validate_index(entry)
+            rid = entry["payload"]["record_id"]
+            require(path.relative_to(directory) == index_path(rid), "index filename mismatch")
+            require(rid not in out, "duplicate indexed record")
+            out[rid] = entry
     return out
 
 
-def snapshot(records: dict, registry: dict) -> dict:
-    manifest = {"record_ids": sorted(records), "registry_sha256": digest(registry), "policy": POLICY}
+def validate_index_graph(index: dict[str, dict], registry: dict[str, dict]) -> None:
+    for rid, entry in index.items():
+        validate_index(entry)
+        p = entry["payload"]
+        require(rid == p["record_id"], "index map ID mismatch")
+        require(p["problem"] in registry, "root problem not registered")
+        for edge in p["relations"]:
+            target, relation = edge["target"], edge["type"]
+            require(target != rid, "self-reference")
+            if target in registry:
+                require(target == p["problem"] and relation in {"addresses", "subproblem-of"},
+                        "invalid root relation")
+                continue
+            if target not in index:
+                require(bool(RID.fullmatch(target)), "invalid remote CRL reference")
+                continue
+            q = index[target]["payload"]
+            require(q["problem"] == p["problem"], "cross-problem record resolution is not supported")
+            allowed = {
+                "addresses": {"QUESTION"},
+                "subproblem-of": {"QUESTION"},
+                "depends-on": {"RESULT"},
+                "reviews": {"RESULT", "REVIEW"},
+                "responds-to": {"REVIEW"},
+                "revises": {p["record_type"]},
+                "withdraws": {"QUESTION", "RESULT", "REVIEW"},
+            }
+            require(q["record_type"] in allowed[relation], "relation target has wrong type")
+            if relation == "withdraws":
+                require(q["actor"]["public_key"] == p["actor"]["public_key"],
+                        "cannot withdraw someone else's publication")
+                require(q.get("result_kind") != "withdrawal", "withdrawal is final in this profile")
+
+    done: set[str] = set()
+    for start in index:
+        stack = [(start, False)]
+        visiting: set[str] = set()
+        while stack:
+            current, exiting = stack.pop()
+            if exiting:
+                visiting.remove(current)
+                done.add(current)
+            elif current not in done:
+                require(current not in visiting, "cyclic local references")
+                visiting.add(current)
+                stack.append((current, True))
+                stack.extend(
+                    (edge["target"], False)
+                    for edge in index[current]["payload"]["relations"]
+                    if edge["target"] in index
+                )
+
+
+def snapshot(index: dict[str, dict], registry: dict[str, dict]) -> dict:
+    entries = [{"record_id": rid, "entry_sha256": digest(index[rid])} for rid in sorted(index)]
+    roots = [registry[rid] for rid in sorted(registry)]
+    manifest = {"entries": entries, "registry_sha256": digest(roots), "policy": POLICY}
     return {"id": "sha256:" + digest(manifest), **manifest}
 
 
-def context(identifier: str, records: dict, registry: dict) -> dict:
-    require(identifier in records, "unknown record")
-    incoming = {}
-    for rid, rec in records.items():
-        for e in rec["payload"]["relations"]:
-            if e["type"] in {"reviews", "revises", "responds-to", "withdraws"}:
-                incoming.setdefault(e["target"], set()).add(rid)
-    pending, seen, missing = [identifier], set(), set()
-    roots = registry_roots(registry)
+def context(record_id: str, index: dict[str, dict], registry: dict[str, dict]) -> dict:
+    require(record_id in index, "record is not present in this index")
+    incoming: dict[str, set[str]] = {}
+    for rid, entry in index.items():
+        for edge in entry["payload"]["relations"]:
+            if edge["type"] in {"reviews", "revises", "responds-to", "withdraws"}:
+                incoming.setdefault(edge["target"], set()).add(rid)
+    pending = [record_id]
+    seen: set[str] = set()
+    missing: set[str] = set()
     while pending:
         rid = pending.pop()
-        if rid in seen or rid in roots:
+        if rid in seen or rid in registry:
             continue
-        if rid not in records:
+        if rid not in index:
             missing.add(rid)
             continue
         seen.add(rid)
-        pending.extend(e["target"] for e in records[rid]["payload"]["relations"])
+        pending.extend(e["target"] for e in index[rid]["payload"]["relations"])
         pending.extend(incoming.get(rid, ()))
-    return {"target": identifier, "snapshot": snapshot(records, registry),
-            "coverage": "partial" if missing else "complete-relative-to-local-snapshot",
-            "missing_record_ids": sorted(missing), "artifact_availability": "not-checked",
-            "unseen_remote_reviews": "unknown", "records": [records[i] for i in sorted(seen)]}
+    return {
+        "target": record_id,
+        "snapshot": snapshot(index, registry),
+        "coverage": "partial" if missing else "complete-relative-to-this-index",
+        "missing_record_ids": sorted(missing),
+        "zenodo_availability": "not-checked",
+        "unseen_other_indexes": "unknown",
+        "entries": [index[i] for i in sorted(seen)],
+    }
 
 
-def board(records: dict, registry: dict) -> dict:
-    validate_graph(records, registry)
-    withdrawn = {e["target"] for r in records.values() for e in r["payload"]["relations"] if e["type"] == "withdraws"}
-    questions = [{"id": i, "title": p["title"], "problem": i} for i, p in registry_roots(registry).items()]
-    questions += [{"id": i, "title": r["payload"]["title"], "problem": r["payload"]["problem"]}
-                  for i, r in sorted(records.items()) if r["payload"]["type"] == "QUESTION"]
+def board(index: dict[str, dict], registry: dict[str, dict]) -> dict:
+    validate_index_graph(index, registry)
+    withdrawn = {
+        edge["target"]
+        for entry in index.values()
+        for edge in entry["payload"]["relations"]
+        if edge["type"] == "withdraws"
+    }
+    questions = [
+        {"id": rid, "title": problem["title"], "problem": rid, "kind": "root"}
+        for rid, problem in sorted(registry.items())
+    ]
+    questions += [
+        {
+            "id": rid,
+            "title": entry["payload"]["title"],
+            "problem": entry["payload"]["problem"],
+            "kind": "subquestion",
+        }
+        for rid, entry in sorted(index.items())
+        if entry["payload"]["record_type"] == "QUESTION"
+    ]
     for q in questions:
-        candidates = [r for i, r in records.items() if i not in withdrawn and r["payload"]["type"] == "RESULT"
-                      and r["payload"].get("answer_scope") == "full"
-                      and any(e == {"type": "addresses", "target": q["id"]} for e in r["payload"]["relations"])]
-        q.update({"progress": "candidate-exists" if candidates else "no-candidate",
-                  "candidate_ids": sorted(r["id"] for r in candidates), "acceptance": "not-assessed",
-                  "withdrawn": q["id"] in withdrawn})
-    return {"snapshot": snapshot(records, registry), "record_count": len(records), "questions": questions,
-            "records": [records[i] for i in sorted(records)], "withdrawn_ids": sorted(withdrawn),
-            "artifact_availability": "not-checked", "activity": "see-work-issues",
-            "warning": "Support is not acceptance. Different keys do not establish independence. External status is not checked."}
+        candidate_ids = []
+        for rid, entry in index.items():
+            p = entry["payload"]
+            if rid in withdrawn or p["record_type"] != "RESULT" or p.get("answer_scope") != "full":
+                continue
+            if any(e["type"] == "addresses" and e["target"] == q["id"] for e in p["relations"]):
+                candidate_ids.append(rid)
+        challenges = 0
+        for entry in index.values():
+            p = entry["payload"]
+            if p["record_type"] == "REVIEW" and p["review"]["outcome"] == "challenges":
+                if any(e["type"] == "reviews" and e["target"] in candidate_ids for e in p["relations"]):
+                    challenges += 1
+        q.update(
+            progress="candidate-exists" if candidate_ids else "no-candidate",
+            candidate_ids=sorted(candidate_ids),
+            direct_challenge_count=challenges,
+            acceptance="not-assessed",
+            withdrawn=q["id"] in withdrawn,
+        )
+    missing = sorted({
+        edge["target"]
+        for entry in index.values()
+        for edge in entry["payload"]["relations"]
+        if bool(RID.fullmatch(edge["target"])) and edge["target"] not in index
+    })
+    return {
+        "snapshot": snapshot(index, registry),
+        "index_count": len(index),
+        "questions": questions,
+        "entries": [index[i] for i in sorted(index)],
+        "withdrawn_ids": sorted(withdrawn),
+        "missing_record_ids": missing,
+        "zenodo_availability": "not-checked",
+        "activity": "see-work-issues",
+        "warning": (
+            "This is an index view, not a verdict. Support is not acceptance; different keys "
+            "do not establish independence; remote Zenodo content is not fetched by this board."
+        ),
+    }
 
 
-def write_board(output: Path, records: dict, registry: dict) -> None:
-    data = board(records, registry)
+def write_board(output: Path, index: dict[str, dict], registry: dict[str, dict]) -> None:
+    data = board(index, registry)
     output.mkdir(parents=True, exist_ok=True)
-    (output / "board.json").write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    (output / "board.json").write_text(
+        json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
     esc = lambda v: html.escape(str(v), quote=True)
-    rows = "".join(f'<tr><td>{esc(q["title"])}</td><td>{esc(q["progress"])}</td><td>{len(q["candidate_ids"])}</td></tr>' for q in data["questions"])
+    rows = "".join(
+        f'<tr><td>{esc(q["title"])}</td><td>{esc(q["progress"])}</td>'
+        f'<td>{len(q["candidate_ids"])}</td><td>{q["direct_challenge_count"]}</td></tr>'
+        for q in data["questions"]
+    )
     cards = []
-    for rec in data["records"]:
-        p = rec["payload"]
-        links = "".join(f'<li>{esc(e["type"])}: <a href="#{esc(e["target"])}">{esc(e["target"])}</a></li>' for e in p["relations"])
-        reviews = [r for r in data["records"] if any(e == {"type": "reviews", "target": rec["id"]} for e in r["payload"]["relations"])]
-        incoming = "".join(f'<li><a href="#{esc(r["id"])}">{esc(r["payload"]["title"])}</a> — {esc(r["payload"]["review"]["outcome"])}</li>' for r in reviews)
-        cards.append(f'<article id="{esc(rec["id"])}"><h2>{esc(p["type"])} · {esc(p["title"])}</h2><p><code>{esc(rec["id"])}</code></p><p>Scope: {esc(p["scope"])}</p><pre>{esc(p["body"])}</pre><ul>{links}</ul><h3>Known direct reviews (not votes)</h3><ul>{incoming}</ul><p>Use the context command for the complete local dispute context, including earlier versions.</p></article>')
-    page = '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; base-uri \'none\'; form-action \'none\'"><title>Public AI Research Commons</title><style>body{font:17px system-ui;max-width:1050px;margin:3rem auto;padding:0 1.5rem;line-height:1.65}table{width:100%;border-collapse:collapse}td,th{text-align:left;padding:.8rem;border-bottom:1px solid}article{border-top:1px solid;margin-top:2rem;padding-top:1rem}pre,code{white-space:pre-wrap;overflow-wrap:anywhere}small{overflow-wrap:anywhere}</style><h1>Public AI Research Commons</h1><p>Experimental research board · observed records, not a verdict.</p><p><a href="board.json">Machine-readable snapshot</a> · <a href="https://github.com/Li-Hongmin/public-ai-research-commons/issues?q=is%3Aissue+is%3Aopen+%5BWORK%5D">Current work declarations</a></p><p>' + esc(data['warning']) + '</p><small>Snapshot: ' + esc(data['snapshot']['id']) + '</small><table><tr><th>Question</th><th>Observed progress</th><th>Candidate answers</th></tr>' + rows + '</table>' + ''.join(cards) + '</html>\n'
+    for entry in data["entries"]:
+        p = entry["payload"]
+        links = "".join(
+            f'<li>{esc(e["type"])}: <code>{esc(e["target"])}</code> — {esc(e["scope"])}</li>'
+            for e in p["relations"]
+        )
+        archive = p["archive"]
+        cards.append(
+            f'<article id="{esc(p["record_id"])}">'
+            f'<h2>{esc(p["record_type"])} · {esc(p["title"])}</h2>'
+            f'<p><code>{esc(p["record_id"])}</code></p>'
+            f'<p>{esc(p["scope"])}</p>'
+            f'<p>Zenodo Version DOI: <a href="{esc(archive["url"])}">{esc(archive["doi"])}</a></p>'
+            f'<p>Licence declared: {esc(p["rights"]["license_declared"])}</p>'
+            f'<ul>{links}</ul></article>'
+        )
+    page = (
+        '<!doctype html><html lang="en"><meta charset="utf-8">'
+        '<meta name="viewport" content="width=device-width,initial-scale=1">'
+        '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; '
+        'style-src \'unsafe-inline\'; base-uri \'none\'; form-action \'none\';">'
+        '<title>Public AI Research Commons</title>'
+        '<style>body{font:17px system-ui;max-width:1050px;margin:3rem auto;padding:0 1.5rem;'
+        'line-height:1.65}table{width:100%;border-collapse:collapse}td,th{text-align:left;'
+        'padding:.8rem;border-bottom:1px solid}article{border-top:1px solid;margin-top:2rem;'
+        'padding-top:1rem}code{overflow-wrap:anywhere}</style>'
+        '<h1>Public AI Research Commons</h1>'
+        '<p>Zenodo-backed discovery index · observed records, not a scientific verdict.</p>'
+        '<p><a href="board.json">Machine-readable snapshot</a></p>'
+        f'<p>{esc(data["warning"])}</p><small>Snapshot: {esc(data["snapshot"]["id"])}</small>'
+        '<table><tr><th>Question</th><th>Observed progress</th><th>Candidate answers</th>'
+        f'<th>Direct challenges</th></tr>{rows}</table>{"".join(cards)}</html>\n'
+    )
     (output / "index.html").write_text(page, encoding="utf-8")
     (output / ".nojekyll").touch()
+
+
+def make_index_payload(publication: dict, doi: str, zenodo_url: str,
+                       source_repository: str | None = None,
+                       source_commit: str | None = None,
+                       concept_doi: str | None = None) -> dict:
+    validate_publication(publication)
+    p = publication["payload"]
+    archive = {
+        "provider": "zenodo",
+        "doi": doi,
+        "url": zenodo_url,
+        "manifest_path": "crl-publication.json",
+        "manifest_sha256": digest(publication),
+    }
+    if concept_doi:
+        archive["concept_doi"] = concept_doi
+    source = None
+    if source_repository or source_commit:
+        require(bool(source_repository and source_commit),
+                "source repository and commit must be supplied together")
+        source = {"repository": source_repository, "commit": source_commit}
+    payload = {
+        "profile": "crl-index/0.3",
+        "record_id": publication["id"],
+        "record_type": p["type"],
+        "problem": p["problem"],
+        "title": p["title"],
+        "scope": p["scope"],
+        "creators": p["creators"],
+        "actor": copy.deepcopy(p["actor"]),
+        "created_at": p["created_at"],
+        "basis_snapshot": p["basis_snapshot"],
+        "archive": archive,
+        "source": source,
+        "rights": p["rights"],
+        "relations": p["relations"],
+        "discovery_permission": "crl-discovery/1.0",
+    }
+    for field in ("result_kind", "answer_scope", "review"):
+        if field in p:
+            payload[field] = p[field]
+    return payload
+
+
+def _write_signed_index(entry: dict, directory: Path) -> Path:
+    path = directory / index_path(entry["payload"]["record_id"])
+    require(not path.exists(), "index entry already exists")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(entry, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return path
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="cmd", required=True)
-    keygen = sub.add_parser("keygen"); keygen.add_argument("--out", type=Path, required=True)
-    signer = sub.add_parser("sign"); signer.add_argument("draft", type=Path); signer.add_argument("--key", type=Path, required=True); signer.add_argument("--records", type=Path, default=Path("records"))
-    for name in ("validate", "board", "context"):
-        p = sub.add_parser(name)
-        p.add_argument("--records", type=Path, default=Path("records"))
-        p.add_argument("--registry", type=Path, default=Path("registry/problems.json"))
-        if name == "context": p.add_argument("id")
-        if name == "board": p.add_argument("--out", type=Path, default=Path("build/site"))
-    a = parser.parse_args(argv)
+
+    p = sub.add_parser("keygen")
+    p.add_argument("--out", type=Path, required=True)
+
+    p = sub.add_parser("sign-publication")
+    p.add_argument("draft", type=Path)
+    p.add_argument("--key", type=Path, required=True)
+    p.add_argument("--out", type=Path, required=True)
+
+    p = sub.add_parser("validate-publication")
+    p.add_argument("publication", type=Path)
+
+    p = sub.add_parser("prepare-index")
+    p.add_argument("publication", type=Path)
+    p.add_argument("--doi", required=True)
+    p.add_argument("--zenodo-url", required=True)
+    p.add_argument("--concept-doi")
+    p.add_argument("--source-repository")
+    p.add_argument("--source-commit")
+    p.add_argument("--key", type=Path, required=True)
+    p.add_argument("--index", type=Path, default=Path("index"))
+
+    sub.add_parser("validate")
+
+    p = sub.add_parser("context")
+    p.add_argument("record_id")
+
+    p = sub.add_parser("board")
+    p.add_argument("--out", type=Path, default=Path("build/site"))
+
+    sub.add_parser("snapshot")
+
+    args = parser.parse_args(argv)
     try:
-        if a.cmd == "keygen":
-            require(not a.out.resolve().is_relative_to(ROOT), "store the private key outside the repository")
-            a.out.parent.mkdir(parents=True, exist_ok=True)
+        if args.cmd == "keygen":
+            require(not args.out.exists(), "refusing to overwrite key")
+            args.out.parent.mkdir(parents=True, exist_ok=True)
             key = Ed25519PrivateKey.generate()
-            fd = os.open(a.out, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-            with os.fdopen(fd, "w") as f: f.write(key.private_bytes_raw().hex() + "\n")
-            print("Public key:", key.public_key().public_bytes_raw().hex())
-        elif a.cmd == "sign":
-            key = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(a.key.read_text().strip()))
-            rec = sign(read_json(a.draft), key); validate_record(rec)
-            dest = a.records / record_path(rec["id"]); dest.parent.mkdir(parents=True, exist_ok=True)
-            raw = json.dumps(rec, ensure_ascii=False, indent=2) + "\n"
-            require(len(raw.encode()) <= MAX_BYTES, "serialized record too large")
-            with dest.open("x", encoding="utf-8") as f: f.write(raw)
-            print(dest)
-        else:
-            records = load_records(a.records); registry = read_json(a.registry)
-            validate_graph(records, registry)
-            if a.cmd == "validate": print(json.dumps({"valid_records": len(records), "scientific_validity": "not-assessed"}))
-            elif a.cmd == "context": print(json.dumps(context(a.id, records, registry), ensure_ascii=False, indent=2))
-            else: write_board(a.out, records, registry); print(a.out / "index.html")
-        return 0
-    except (OSError, ValueError, ValidationError, KeyError) as exc:
-        # Avoid echoing attacker-controlled values as GitHub workflow commands.
-        print(json.dumps({"error": str(exc)[:2000]}), file=sys.stderr)
+            args.out.write_text(key.private_bytes_raw().hex() + "\n", encoding="ascii")
+            try:
+                os.chmod(args.out, 0o600)
+            except OSError:
+                pass
+            print(key.public_key().public_bytes_raw().hex())
+            return 0
+
+        if args.cmd == "sign-publication":
+            draft = read_json(args.draft, MAX_PUBLICATION_BYTES)
+            publication = sign_publication(draft, _private_key(args.key))
+            validate_publication(publication)
+            require(not args.out.exists(), "refusing to overwrite publication")
+            args.out.write_text(
+                json.dumps(publication, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+            )
+            print(publication["id"])
+            return 0
+
+        if args.cmd == "validate-publication":
+            validate_publication(read_json(args.publication, MAX_PUBLICATION_BYTES))
+            print(json.dumps({"valid": True, "scientific_validity": "not-assessed"}))
+            return 0
+
+        registry = load_registry()
+        index = load_index()
+        validate_index_graph(index, registry)
+
+        if args.cmd == "prepare-index":
+            publication = read_json(args.publication, MAX_PUBLICATION_BYTES)
+            validate_publication(publication)
+            key = _private_key(args.key)
+            pubkey = key.public_key().public_bytes_raw().hex()
+            require(publication["payload"]["actor"]["public_key"] == pubkey,
+                    "index signer must match publication signer")
+            payload = make_index_payload(
+                publication, args.doi, args.zenodo_url, args.source_repository,
+                args.source_commit, args.concept_doi
+            )
+            entry = sign_index(payload, key)
+            validate_index(entry)
+            test_index = dict(index)
+            test_index[payload["record_id"]] = entry
+            validate_index_graph(test_index, registry)
+            path = _write_signed_index(entry, args.index)
+            print(path)
+            return 0
+
+        if args.cmd == "validate":
+            print(json.dumps({
+                "valid_index_entries": len(index),
+                "scientific_validity": "not-assessed",
+                "remote_archives_fetched": False,
+            }))
+            return 0
+
+        if args.cmd == "context":
+            print(json.dumps(context(args.record_id, index, registry),
+                             ensure_ascii=False, indent=2))
+            return 0
+
+        if args.cmd == "board":
+            write_board(args.out, index, registry)
+            print(args.out)
+            return 0
+
+        if args.cmd == "snapshot":
+            print(json.dumps(snapshot(index, registry), indent=2))
+            return 0
+
+        raise AssertionError("unreachable")
+    except (KeyError, ValueError, OSError, ValidationError) as exc:
+        print(json.dumps({"error": str(exc)[:1500]}), file=os.sys.stderr)
         return 1
 
 

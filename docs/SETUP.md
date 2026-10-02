@@ -1,56 +1,46 @@
 # Maintainer setup
 
-## Already supplied as code
+The reference implementation runs on GitHub Actions. No API server, database,
+model API, or GPU is required.
 
-`checks.yml` tests trusted code, validates current records, and examines a proposed
-single record as data. `board.yml` builds a downloadable static board.
-`admit.yml` is an optional independently revalidating merge lane.
-No new paid service or model API key is required. GitHub limits still apply.
+`checks.yml` tests trusted code, validates the local index, and treats a proposed
+scientific header as data. `board.yml` builds a static board from
+`registry/problems.json + index/`. `admit.yml` is an optional write-capable
+lane and should remain disabled until end-to-end fork testing is complete.
 
-## Pages: one-time repository settings
+## Pages
 
-In **Settings → Pages**, select **GitHub Actions** as the source. Then under
-**Settings → Secrets and variables → Actions → Variables**, set
-`CRL_PAGES` to `true`. Run **Research board** from the Actions tab once.
-Use the deployment URL GitHub returns; do not assume the site is published merely
-because these workflow files are present. Until then, download the
-`crl-research-board` workflow artifact or build the board locally.
+In **Settings → Pages**, choose **GitHub Actions**. Under
+**Settings → Secrets and variables → Actions → Variables**, set:
 
-## Optional automatic record admission
+```text
+CRL_PAGES=true
+```
 
-Keep this disabled until a valid record, an invalid signature, a workflow-change
-PR and a stale-head PR have been tested through GitHub itself, preferably including
-an independently operated fork. Local unit tests are not that end-to-end test.
+Run **Research board** once. The board is derived output and is not committed to
+`main`.
 
-Configure branch/ruleset protections for `main`: disallow force-push/deletion and
-require the intended validation check. Protect code, workflows, registry and
-schema changes through your maintainer process. The record gate never
-intentionally bypasses branch protection, required reviews, or GitHub policy.
-Requiring a human review for every PR will also block unattended record merges.
+## Optional automatic index admission
 
-Then set repository variable `CRL_AUTO_ADMIT` to `true`. The optional workflow
-revalidates a completed PR check from trusted main, rechecks the live PR, and
-merges only one new valid record using its exact head SHA. It does not rely on
-an untrusted workflow's claim of success, run its code, or consume its artifacts.
-Infrastructure/governance PRs are never auto-admitted.
+Before enabling, test a valid forked index entry, invalid signature, wrong path,
+stale head, multi-file PR, and code/workflow/schema change.
 
-This calls GitHub's merge endpoint directly; it does not require the separate
-repository `allow_auto_merge` feature. The job needs repository-scoped
-`contents: write`, `pull-requests: write` and `actions: write`. GitHub settings may
-restrict those permissions. No owner PAT should be added to make it work.
+Then set:
 
-After a bot merge, the workflow explicitly dispatches **Research board** because
-`GITHUB_TOKEN`-generated pushes do not reliably trigger another workflow. A
-missing PR association, changed base, permission failure or first-time fork
-approval can require a rerun. The `workflow_dispatch` input accepts a PR number.
-This is a small-pilot lane, not a high-throughput queue or a zero-maintenance claim.
+```text
+CRL_AUTO_ADMIT=true
+```
 
-## One-time versus recurring responsibilities
+The lane revalidates only one new `index/<hash>.json` file against trusted main
+and merges the exact checked head. It does not fetch Zenodo or verify scientific
+content. Governance and infrastructure PRs never use this lane.
 
-Ordinary record validity is checked by code. Scientific disputes are records,
-not inbox requests to the founder. New root domains, protocol/security changes,
-abuse reports and hosting incidents still need responsible maintainers.
+Do not add an owner PAT merely to bypass GitHub permission settings.
 
-Do not enable an untested write-capable workflow just to eliminate the final
-setup step. Do not treat an automatic merge as permission for an agent to execute
-someone else's code or disclose private data.
+## Maintainer responsibilities
+
+Ordinary scientific disagreement belongs in CRL publications, not the founder's
+inbox. Maintainers remain responsible for root-domain admission, protocol and
+security changes, abuse/legal reports, and hosting incidents.
+
+Independent indexes and mirrors are encouraged.

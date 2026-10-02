@@ -1,62 +1,60 @@
 # Security boundaries
 
-This is a pre-alpha research-record implementation, not a certified secure agent
-runtime. Do not place credentials, private datasets, or unreviewed production
-workloads in it.
+This repository is a discovery index, not a trusted agent runtime or a scientific
+truth service.
 
-## Protected boundaries
+## Trust model
 
-- Admission reads trusted base code. A science PR may add one signed JSON record;
-  it may not change existing records, workflows, code or the registry.
-- Proposed content is data. No cited code, artifact, dependency installer or URL
-  is executed or downloaded by the admission gate.
-- Payload IDs and signatures are checked; references must resolve locally and
-  match their relation types. A key cannot withdraw another key's record.
-- PR head SHA, changed-file total, regular-file mode and byte size are checked.
-  The write-capable admission job revalidates independently against current main,
-  never consumes an untrusted workflow artifact, and merges only the checked head.
-- Automatic admission is opt-in. It uses the repository-scoped job token, not an
-  owner PAT. The board is dispatched explicitly after a bot merge.
-- HTML renders record text escaped, has no scripts, loads no remote artifacts,
-  and carries a restrictive content-security policy.
-- The research board does not vote on truth or claim independent verification.
+Contributor workspaces, Zenodo publications, attachments, and index text are
+untrusted. A signature proves control of a key, not identity, ownership,
+originality, independence, harmlessness, or correctness. A DOI is an archival
+identifier, not scientific validation.
 
-## What these checks do NOT guarantee
+## Admission boundary
 
-JSON validity cannot detect dangerous research hidden in mathematical wording,
-plagiarism, malicious intent, false evidence, Sybil accounts or prompt injection.
-A mathematics-only registry is not a universal safety guarantee. Signatures do
-not establish a human identity, author entitlement or independent replication.
+A normal scientific PR may add exactly one small signed JSON file under `index/`.
 
-This version has no robust per-person quota, semantic abuse classifier, sandbox
-executor, key revocation, automatic work expiry, cross-host mirroring or durable
-retention guarantee. A sufficiently large spam campaign may exhaust GitHub
-resources despite per-record limits. Restrict or pause admission when necessary.
+The gate validates schema, signature, path, byte size, relation syntax, and the
+registered root problem. It may accept references absent from this index and must
+then expose the view as partial.
 
-Client operators must isolate untrusted research from secrets and tool authority.
-Do not give an agent execution, spending, network or disclosure authority merely
-because a CRL record requests it. Model-side instructions alone are insufficient.
+The gate never:
 
-A snapshot hash identifies a set; it cannot detect an unseen suppressed record or
-prove when it first existed. A fork does not automatically stay synchronized, and
-Git clones do not include all Issues or other GitHub service metadata. Keep
-independent backups and export coordination metadata separately when needed.
+- executes contributor code;
+- installs contributor dependencies;
+- downloads Zenodo;
+- follows research artifact URLs;
+- treats index admission as scientific acceptance.
 
-## Pause and report
+Code, workflow, schema, registry, policy, and licensing changes remain maintainer
+changes.
 
-For an incident, set repository variable `CRL_AUTO_ADMIT` to `false`, disable the
-admission workflow if needed, and review logs and credentials. Use the owner's
-established private contact channel for exploitable vulnerabilities or leaked
-secrets. Do not publish secrets or exploit payloads in an Issue. GitHub private
-vulnerability reporting may be enabled by the owner; do not assume it is enabled.
+## Remote content
 
-Maintainers may remove unlawful or private material from their hosting service.
-The project promises no irrevocable global publication or censorship-proof storage.
+Clients inspecting Zenodo or source repositories need independent sandboxing and
+least-privilege tool policies. Remote papers, prompts, code comments, or notebooks
+cannot grant authority to read secrets, spend money, access private services,
+alter safety controls, or publish private information.
 
-## GitHub references
+## Availability
 
-- https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target
-- https://docs.github.com/en/actions/concepts/security/github_token
+The index stores the exact Version DOI and a signed manifest digest but does not
+currently fetch the archive during admission. A green check therefore does not
+prove the Zenodo package is available or that its manifest matches the declared
+digest.
 
-The supplied workflows deliberately avoid `pull_request_target`. First-time fork
-approval and repository policies can still require maintainer intervention.
+Independent indexers may verify archives later. Retrieval failure should be
+reported as unavailable material, not transformed into "no evidence".
+
+## Abuse
+
+Spam, Sybil identities, plagiarism, malicious links, poisoned artifacts, and
+false citations remain possible. Account count and vote count are not scientific
+evidence.
+
+The initial root registry is mathematics-only. Maintainers may pause automatic
+admission and handle abuse or legal/privacy reports without claiming to erase
+independent copies.
+
+For an incident, set `CRL_AUTO_ADMIT=false` and disable the admission workflow
+if necessary. Do not publish secrets or exploit payloads in public Issues.

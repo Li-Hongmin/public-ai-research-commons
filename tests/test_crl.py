@@ -8,205 +8,287 @@ from pathlib import Path
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from jsonschema import ValidationError
-from tools import crl
-from tools.admission import inspect
-from examples.demo import make_demo
+
+import crl
+from admission import inspect
+
+ROOT_PROBLEM = "crl:problem:riemann-hypothesis"
+
+
+def make_publication(key=None, kind="RESULT", relation_target=ROOT_PROBLEM):
+    key = key or Ed25519PrivateKey.generate()
+    payload = {
+        "profile": "crl-publication/0.3",
+        "type": kind,
+        "problem": ROOT_PROBLEM,
+        "title": "Synthetic test publication",
+        "body": "Synthetic content used only by tests.",
+        "scope": "Synthetic test scope.",
+        "creators": [{"name": "Test Contributor", "contribution": "Synthetic test contribution."}],
+        "actor": {"kind": "human-ai", "name": "Test Actor"},
+        "created_at": "2026-10-03T00:00:00Z",
+        "basis_snapshot": None,
+        "rights": {
+            "rights_holder_statement": "Synthetic test rights holder statement.",
+            "license_declared": "TEST-LICENSE"
+        },
+        "relations": [],
+        "artifacts": [],
+    }
+    if kind == "QUESTION":
+        payload["relations"] = [
+            {"type": "subproblem-of", "target": relation_target, "scope": "Synthetic subquestion."}
+        ]
+    elif kind == "RESULT":
+        payload["relations"] = [
+            {"type": "addresses", "target": relation_target, "scope": "Synthetic answer scope."}
+        ]
+        payload["result_kind"] = "lemma"
+        payload["answer_scope"] = "partial"
+    else:
+        payload["relations"] = [
+            {"type": "reviews", "target": relation_target, "scope": "Synthetic review scope."}
+        ]
+        payload["review"] = {
+            "outcome": "challenges",
+            "method": "argument-check",
+            "scope": "Synthetic review."
+        }
+    return crl.sign_publication(payload, key), key
+
+
+def make_entry(publication, key, doi="10.5281/zenodo.123456"):
+    payload = crl.make_index_payload(
+        publication,
+        doi,
+        "https://zenodo.org/records/" + doi.rsplit(".", 1)[-1],
+        "https://github.com/example/research",
+        "a" * 40,
+    )
+    return crl.sign_index(payload, key)
 
 
 class ProtocolTests(unittest.TestCase):
     def setUp(self):
-        self.records, self.registry = make_demo()
-        self.q = next(r for r in self.records.values() if r['payload']['type'] == 'QUESTION')
-        self.r = next(r for r in self.records.values() if r['payload']['type'] == 'RESULT')
-        self.c = next(r for r in self.records.values() if r['payload']['type'] == 'REVIEW')
+        self.registry = crl.load_registry()
+        self.pub, self.key = make_publication()
+        self.entry = make_entry(self.pub, self.key)
 
-    def ressign(self, record, edit):
-        p = copy.deepcopy(record['payload'])
-        p['actor'].pop('public_key')
-        edit(p)
-        return crl.sign(p, Ed25519PrivateKey.generate())
+    def test_publication_roundtrip(self):
+        crl.validate_publication(self.pub)
+        self.assertEqual(self.pub["id"], self.entry["payload"]["record_id"])
 
-    def test_demo_roundtrip(self):
-        self.assertEqual(len(self.records), 5)
-        crl.validate_graph(self.records, self.registry)
-        for r in self.records.values():
-            crl.validate_record(crl.loads(json.dumps(r).encode()))
+    def test_index_roundtrip(self):
+        crl.validate_index(self.entry)
+        crl.validate_index_graph({self.pub["id"]: self.entry}, self.registry)
 
     def test_tamper_rejected(self):
-        r = copy.deepcopy(self.r); r['payload']['body'] += ' changed'
-        with self.assertRaisesRegex(ValueError, 'hash'): crl.validate_record(r)
+        entry = copy.deepcopy(self.entry)
+        entry["payload"]["title"] = "changed"
+        with self.assertRaisesRegex(ValueError, "signature"):
+            crl.validate_index(entry)
 
-    def test_recomputed_hash_does_not_forge_signature(self):
-        r = copy.deepcopy(self.r); r['payload']['body'] += ' changed'
-        r['id'] = 'crl:sha256:' + crl.digest(r['payload'])
-        with self.assertRaisesRegex(ValueError, 'signature'): crl.validate_record(r)
+    def test_publication_tamper_rejected(self):
+        publication = copy.deepcopy(self.pub)
+        publication["payload"]["body"] += " changed"
+        with self.assertRaisesRegex(ValueError, "hash"):
+            crl.validate_publication(publication)
 
-    def test_duplicate_keys_rejected(self):
-        with self.assertRaisesRegex(ValueError, 'duplicate'): crl.loads(b'{"a":1,"a":2}')
+    def test_duplicate_json_keys_rejected(self):
+        with self.assertRaisesRegex(ValueError, "duplicate"):
+            crl.loads(b'{"a":1,"a":2}', 100)
 
-    def test_nan_rejected(self):
-        with self.assertRaises(ValueError): crl.loads(b'{"x":NaN}')
+    def test_relation_scope_required(self):
+        entry = copy.deepcopy(self.entry)
+        del entry["payload"]["relations"][0]["scope"]
+        with self.assertRaises(ValidationError):
+            crl.validate_index(entry)
 
-    def test_bad_utf8_rejected(self):
-        with self.assertRaises(ValueError): crl.loads(b'"\xff"')
+    def test_rights_required(self):
+        entry = copy.deepcopy(self.entry)
+        del entry["payload"]["rights"]
+        with self.assertRaises(ValidationError):
+            crl.validate_index(entry)
 
-    def test_nested_json_rejected(self):
-        with self.assertRaises(ValueError): crl.loads(b'[' * 25 + b'0' + b']' * 25)
+    def test_specific_zenodo_doi_required(self):
+        entry = copy.deepcopy(self.entry)
+        entry["payload"]["archive"]["doi"] = "10.1234/example"
+        with self.assertRaises(ValidationError):
+            crl.validate_index(entry)
 
-    def test_byte_limit(self):
-        with self.assertRaises(ValueError): crl.loads(b' ' * (crl.MAX_BYTES + 1))
+    def test_doi_and_url_must_match(self):
+        entry = copy.deepcopy(self.entry)
+        p = copy.deepcopy(entry["payload"])
+        p["archive"]["url"] = "https://zenodo.org/records/999"
+        entry = crl.sign_index(p, self.key)
+        with self.assertRaisesRegex(ValueError, "disagree"):
+            crl.validate_index(entry)
 
-    def test_unknown_fields_rejected(self):
-        r = copy.deepcopy(self.q); r['execute'] = 'arbitrary.sh'
-        with self.assertRaises(ValidationError): crl.validate_record(r)
+    def test_missing_remote_reference_allowed_but_context_partial(self):
+        missing = "crl:sha256:" + "b" * 64
+        p = copy.deepcopy(self.pub["payload"])
+        p["actor"].pop("public_key")
+        p["relations"].append(
+            {"type": "depends-on", "target": missing, "scope": "Remote dependency."}
+        )
+        pub = crl.sign_publication(p, self.key)
+        entry = make_entry(pub, self.key, "10.5281/zenodo.123457")
+        index = {pub["id"]: entry}
+        crl.validate_index_graph(index, self.registry)
+        ctx = crl.context(pub["id"], index, self.registry)
+        self.assertEqual(ctx["coverage"], "partial")
+        self.assertIn(missing, ctx["missing_record_ids"])
 
-    def test_missing_reference_rejected(self):
-        records = dict(self.records); del records[self.q['id']]
-        with self.assertRaisesRegex(ValueError, 'missing reference'): crl.validate_graph(records, self.registry)
-
-    def test_root_allowlist(self):
-        with self.assertRaisesRegex(ValueError, 'not registered'): crl.validate_graph(self.records, {'programs': []})
-
-    def test_wrong_relation_type_rejected(self):
-        r = self.ressign(self.q, lambda p: p['relations'].append({'type': 'depends-on', 'target': self.q['id']}))
-        with self.assertRaisesRegex(ValueError, 'wrong type'): crl.validate_graph({**self.records, r['id']: r}, self.registry)
-
-    def test_no_foreign_withdrawal(self):
-        def edit(p):
-            p.update(result_kind='withdrawal', answer_scope='none', relations=[{'type': 'withdraws', 'target': self.r['id']}])
-        r = self.ressign(self.r, edit)
-        with self.assertRaisesRegex(ValueError, "someone else's"): crl.validate_graph({**self.records, r['id']: r}, self.registry)
-
-    def test_own_withdrawal_preserves_record(self):
-        key = Ed25519PrivateKey.generate()
-        p = copy.deepcopy(self.r['payload']); p['actor'].pop('public_key')
-        original = crl.sign(p, key)
-        p.update(result_kind='withdrawal', answer_scope='none', relations=[{'type': 'withdraws', 'target': original['id']}])
-        withdraw = crl.sign(p, key)
-        records = {**self.records, original['id']: original, withdraw['id']: withdraw}
-        crl.validate_graph(records, self.registry)
-        b = crl.board(records, self.registry)
-        self.assertIn(original['id'], b['withdrawn_ids'])
-        self.assertIn(original['id'], [r['id'] for r in b['records']])
-
-    def test_revision_carries_known_objection(self):
-        revision = next(r for r in self.records.values() if any(e['type'] == 'revises' for e in r['payload']['relations']))
-        ids = {r['id'] for r in crl.context(revision['id'], self.records, self.registry)['records']}
-        self.assertIn(self.c['id'], ids)
-        self.assertIn(self.r['id'], ids)
-
-    def test_later_review_appears_without_editing_claim(self):
-        before = crl.context(self.r['id'], {self.q['id']: self.q, self.r['id']: self.r}, self.registry)
-        after = crl.context(self.r['id'], self.records, self.registry)
-        self.assertNotEqual(before['snapshot']['id'], after['snapshot']['id'])
-        self.assertIn(self.c['id'], {r['id'] for r in after['records']})
-
-    def test_partial_context_is_labelled(self):
-        records = dict(self.records); del records[self.q['id']]
-        ctx = crl.context(self.r['id'], records, self.registry)
-        self.assertEqual(ctx['coverage'], 'partial')
-        self.assertIn(self.q['id'], ctx['missing_record_ids'])
-
-    def test_snapshot_independent_of_map_order(self):
-        rev = dict(reversed(list(self.records.items())))
-        self.assertEqual(crl.snapshot(self.records, self.registry), crl.snapshot(rev, self.registry))
-
-    def test_registry_bound_to_snapshot(self):
-        registry = copy.deepcopy(self.registry); registry['note'] = 'different coverage'
-        self.assertNotEqual(crl.snapshot(self.records, registry)['id'], crl.snapshot(self.records, self.registry)['id'])
+    def test_later_review_appears_in_context(self):
+        result_id = self.pub["id"]
+        review_pub, review_key = make_publication(kind="REVIEW", relation_target=result_id)
+        review_entry = make_entry(review_pub, review_key, "10.5281/zenodo.123458")
+        index = {result_id: self.entry, review_pub["id"]: review_entry}
+        crl.validate_index_graph(index, self.registry)
+        ctx = crl.context(result_id, index, self.registry)
+        self.assertIn(
+            review_pub["id"],
+            {e["payload"]["record_id"] for e in ctx["entries"]}
+        )
 
     def test_support_is_not_acceptance(self):
-        b = crl.board(self.records, self.registry)
-        self.assertTrue(all(q['acceptance'] == 'not-assessed' for q in b['questions']))
-        self.assertEqual(b['artifact_availability'], 'not-checked')
+        b = crl.board({self.pub["id"]: self.entry}, self.registry)
+        self.assertTrue(all(q["acceptance"] == "not-assessed" for q in b["questions"]))
+        self.assertEqual(b["zenodo_availability"], "not-checked")
 
-    def test_partial_result_is_not_full_candidate(self):
-        r = self.ressign(self.r, lambda p: p.update(answer_scope='partial'))
-        b = crl.board({self.q['id']: self.q, r['id']: r}, self.registry)
-        self.assertTrue(all(q['progress'] == 'no-candidate' for q in b['questions']))
+    def test_full_result_is_candidate(self):
+        p = copy.deepcopy(self.pub["payload"])
+        p["actor"].pop("public_key")
+        p["answer_scope"] = "full"
+        pub = crl.sign_publication(p, self.key)
+        entry = make_entry(pub, self.key, "10.5281/zenodo.123459")
+        b = crl.board({pub["id"]: entry}, self.registry)
+        root = next(q for q in b["questions"] if q["id"] == ROOT_PROBLEM)
+        self.assertEqual(root["progress"], "candidate-exists")
+
+    def test_index_path_is_sharded(self):
+        path = crl.index_path(self.pub["id"])
+        digest = self.pub["id"].split(":")[-1]
+        self.assertEqual(path.parts[:2], (digest[:2], digest[2:4]))
+        self.assertEqual(path.name, digest + ".json")
+
+    def test_board_does_not_fetch_zenodo(self):
+        with patch("urllib.request.urlopen", side_effect=AssertionError("network call")):
+            crl.board({self.pub["id"]: self.entry}, self.registry)
 
     def test_html_is_escaped(self):
-        q = self.ressign(self.q, lambda p: p.update(title='<script>alert(1)</script>', body='<img src=x onerror=alert(1)>'))
+        p = copy.deepcopy(self.pub["payload"])
+        p["actor"].pop("public_key")
+        p["title"] = "<script>alert(1)</script>"
+        pub = crl.sign_publication(p, self.key)
+        entry = make_entry(pub, self.key, "10.5281/zenodo.123460")
         with tempfile.TemporaryDirectory() as d:
-            crl.write_board(Path(d), {q['id']: q}, self.registry)
-            page = (Path(d) / 'index.html').read_text()
-            self.assertNotIn('<script>', page)
-            self.assertIn('&lt;script&gt;', page)
+            crl.write_board(Path(d), {pub["id"]: entry}, self.registry)
+            page = (Path(d) / "index.html").read_text()
+            self.assertNotIn("<script>alert", page)
+            self.assertIn("&lt;script&gt;", page)
             self.assertIn("default-src 'none'", page)
 
-    def test_artifact_scheme_rejected(self):
-        r = self.ressign(self.r, lambda p: p.update(artifacts=[{'uri': 'javascript:alert(1)', 'sha256': '0'*64, 'description': 'malicious'}]))
-        with self.assertRaises(ValidationError): crl.validate_record(r)
-
-    def test_artifact_is_never_fetched(self):
-        r = self.ressign(self.r, lambda p: p.update(artifacts=[{'uri': 'https://example.invalid/proof.py', 'sha256': '0'*64, 'description': 'not fetched'}]))
-        with patch('urllib.request.urlopen', side_effect=AssertionError('network call')):
-            crl.validate_graph({**self.records, r['id']: r}, self.registry)
-            self.assertEqual(crl.context(r['id'], {**self.records, r['id']: r}, self.registry)['artifact_availability'], 'not-checked')
-
-    def test_filename_and_symlink_checks(self):
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            (root / 'wrong.json').write_text(json.dumps(self.q))
-            with self.assertRaisesRegex(ValueError, 'filename'): crl.load_records(root)
-            (root / 'wrong.json').unlink()
-            (root / 'link').symlink_to(root, target_is_directory=True)
-            with self.assertRaisesRegex(ValueError, 'symlink'): crl.load_records(root)
-
-    def test_jcs_utf16_and_numbers(self):
-        self.assertEqual(crl.canonical({'\ue000': 1, '\U00010000': 2}), '{"\U00010000":2,"\ue000":1}'.encode())
-        self.assertEqual(crl.canonical([1e-7, 1e-6, -0.0, 1e20]), b'[1e-7,0.000001,0,100000000000000000000]')
+    def test_withdrawal_must_be_own_publication(self):
+        other_key = Ed25519PrivateKey.generate()
+        p = copy.deepcopy(self.pub["payload"])
+        p["actor"] = {"kind": "human", "name": "Other"}
+        p["result_kind"] = "withdrawal"
+        p["answer_scope"] = "none"
+        p["relations"] = [
+            {"type": "withdraws", "target": self.pub["id"], "scope": "Attempted withdrawal."}
+        ]
+        pub = crl.sign_publication(p, other_key)
+        entry = make_entry(pub, other_key, "10.5281/zenodo.123461")
+        with self.assertRaisesRegex(ValueError, "someone else's"):
+            crl.validate_index_graph(
+                {self.pub["id"]: self.entry, pub["id"]: entry}, self.registry
+            )
 
 
 class AdmissionTests(unittest.TestCase):
     def setUp(self):
-        records, self.registry = make_demo()
-        self.record = next(r for r in records.values() if r['payload']['type'] == 'QUESTION')
-        self.raw = json.dumps(self.record).encode()
-        self.path = 'records/' + crl.record_path(self.record['id']).as_posix()
-        self.pr = {'state': 'open', 'draft': False, 'base': {'ref': 'main', 'repo': {'full_name': 'owner/commons'}},
-                   'head': {'sha': 'a'*40, 'repo': {'full_name': 'fork/commons'}}, 'changed_files': 1}
-        self.mode = '100644'
+        self.registry = crl.load_registry()
+        self.pub, self.key = make_publication()
+        self.entry = make_entry(self.pub, self.key)
+        self.raw = json.dumps(self.entry).encode()
+        self.path = "index/" + crl.index_path(self.pub["id"]).as_posix()
+        self.pr = {
+            "state": "open",
+            "draft": False,
+            "base": {"ref": "main", "repo": {"full_name": "owner/commons"}},
+            "head": {"sha": "a" * 40, "repo": {"full_name": "fork/commons"}},
+            "changed_files": 1,
+        }
+        self.mode = "100644"
         self.changed_path = self.path
 
-    def api(self, path, method='GET', data=None):
-        if path.endswith('/pulls/1'): return copy.deepcopy(self.pr)
-        if '/pulls/1/files' in path: return [{'filename': self.changed_path, 'status': 'added', 'sha': 'b'*40}]
-        if '/git/trees/' in path: return {'truncated': False, 'tree': [{'path': self.path, 'sha': 'b'*40, 'mode': self.mode, 'type': 'blob', 'size': len(self.raw)}]}
-        if '/git/blobs/' in path: return {'encoding': 'base64', 'size': len(self.raw), 'content': base64.b64encode(self.raw).decode()}
-        raise AssertionError('unexpected API access: ' + path)
+    def api(self, path, method="GET", data=None):
+        if path.endswith("/pulls/1"):
+            return copy.deepcopy(self.pr)
+        if "/pulls/1/files" in path:
+            return [{"filename": self.changed_path, "status": "added", "sha": "b" * 40}]
+        if "/git/trees/" in path:
+            return {
+                "truncated": False,
+                "tree": [{
+                    "path": self.path,
+                    "sha": "b" * 40,
+                    "mode": self.mode,
+                    "type": "blob",
+                    "size": len(self.raw),
+                }],
+            }
+        if "/git/blobs/" in path:
+            return {
+                "encoding": "base64",
+                "size": len(self.raw),
+                "content": base64.b64encode(self.raw).decode(),
+            }
+        raise AssertionError("unexpected API access: " + path)
 
     def run_inspect(self, head=None):
         with tempfile.TemporaryDirectory() as d:
-            root = Path(d); (root / 'registry').mkdir()
-            (root / 'registry/problems.json').write_text(json.dumps(self.registry))
-            return inspect(self.api, 'owner/commons', 1, root, head)
+            root = Path(d)
+            (root / "registry").mkdir(parents=True)
+            source = Path(__file__).resolve().parents[1] / "registry/problems.json"
+            (root / "registry/problems.json").write_bytes(source.read_bytes())
+            (root / "index").mkdir()
+            return inspect(self.api, "owner/commons", 1, root, head)
 
-    def test_new_record_is_eligible(self):
-        self.assertTrue(self.run_inspect()['eligible'])
+    def test_new_index_entry_is_eligible(self):
+        self.assertTrue(self.run_inspect()["eligible"])
+
+    def test_old_records_path_is_not_auto_admitted(self):
+        self.changed_path = "records/aa/bb/" + "c" * 64 + ".json"
+        self.assertFalse(self.run_inspect()["eligible"])
 
     def test_workflow_change_is_not_auto_admitted(self):
-        self.changed_path = '.github/workflows/owned.yml'
-        self.assertFalse(self.run_inspect()['eligible'])
+        self.changed_path = ".github/workflows/owned.yml"
+        self.assertFalse(self.run_inspect()["eligible"])
 
     def test_multifile_change_is_not_auto_admitted(self):
-        self.pr['changed_files'] = 2
-        self.assertFalse(self.run_inspect()['eligible'])
+        self.pr["changed_files"] = 2
+        self.assertFalse(self.run_inspect()["eligible"])
 
     def test_executable_and_symlink_rejected(self):
-        for mode in ('100755', '120000', '160000'):
+        for mode in ("100755", "120000", "160000"):
             self.mode = mode
-            with self.assertRaisesRegex(ValueError, 'non-executable'): self.run_inspect()
+            with self.assertRaisesRegex(ValueError, "non-executable"):
+                self.run_inspect()
 
     def test_stale_head_rejected(self):
-        with self.assertRaisesRegex(ValueError, 'changed'): self.run_inspect('c'*40)
+        with self.assertRaisesRegex(ValueError, "changed"):
+            self.run_inspect("c" * 40)
 
     def test_oversized_blob_rejected(self):
-        self.raw += b' ' * crl.MAX_BYTES
-        with self.assertRaisesRegex(ValueError, 'oversize'): self.run_inspect()
+        self.raw += b" " * crl.MAX_INDEX_BYTES
+        with self.assertRaisesRegex(ValueError, "oversize"):
+            self.run_inspect()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

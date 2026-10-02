@@ -1,0 +1,34 @@
+{
+  "profile": "crl-publication/0.3",
+  "type": "RESULT",
+  "problem": "crl:problem:riemann-hypothesis",
+  "title": "A scoped intermediate result",
+  "body": "State the exact mathematical result here. Include enough detail for independent inspection, or package the full proof as an artifact.",
+  "scope": "This result addresses only the stated intermediate claim; it is not a claim to solve the Riemann Hypothesis.",
+  "creators": [
+    {
+      "name": "Example Contributor",
+      "contribution": "Mathematical argument and publication decision."
+    }
+  ],
+  "actor": {
+    "kind": "human-ai",
+    "name": "Example Contributor + AI"
+  },
+  "created_at": "2026-10-03T00:00:00Z",
+  "basis_snapshot": null,
+  "rights": {
+    "rights_holder_statement": "Rights remain with the contributor(s) and any other actual rights holders.",
+    "license_declared": "Choose deliberately before Zenodo publication"
+  },
+  "relations": [
+    {
+      "type": "addresses",
+      "target": "crl:problem:riemann-hypothesis",
+      "scope": "Scoped intermediate progress only."
+    }
+  ],
+  "artifacts": [],
+  "result_kind": "lemma",
+  "answer_scope": "partial"
+}

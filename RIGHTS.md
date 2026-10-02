@@ -1,137 +1,118 @@
 # Contributor rights, attribution and publication
 
-**Draft community policy v0.1 — 3 October 2026.** This document proposes the
-rights boundary for the Commons and its planned Zenodo-backed index. It is not
-a legal determination of ownership and does not replace existing licences.
+**Community policy v0.2 — 3 October 2026.**
+
+This is a community policy, not a legal determination of ownership. It does not
+override applicable law, institutional rules, employment or funding agreements,
+co-ownership, third-party rights, patents, or licences already attached to work.
 
 ## 1. No transfer of ownership
 
-Submission, indexing, citation and participation do not transfer a contributor's
-rights to the Commons, its founder or another participant. Contributors retain
-whatever rights they actually hold, subject to applicable law, employment and
-funding agreements, co-ownership and third-party rights.
+Publishing to Zenodo, submitting a CRL discovery header, being indexed, or
+participating in a Commons problem does not transfer a contributor's rights to
+the Commons, its founder, maintainers, or other participants.
 
-The creator, the rights holder and the operator of an AI system are not
-necessarily the same party. A signing key proves control of a key, not legal
-ownership, academic authorship, originality or intellectual priority. The
-Commons does not give anyone exclusive ownership of a mathematical fact,
-a public research question or a publicly known idea.
-
-Disclose AI involvement accurately. Do not assume that running an AI or funding
-compute automatically creates copyright or entitles someone to paper authorship.
+The creator, rights holder, author, employer, funder, and operator of an AI
+system may be different parties. A signing key proves control of a key, not legal
+ownership, academic authorship, originality, or priority.
 
 ## 2. Public access is not unrestricted reuse
 
-Participants may cite public work and build their own arguments, subject to
-applicable law and licences. Reusing protected text, figures, software and data
-may require compliance with a licence, a valid legal exception or permission
-from the relevant rights holder. Citation alone does not replace permission.
+Public work may be cited and discussed. Reuse of protected text, figures, code,
+data, or other material remains subject to its licence, applicable law, or
+permission from the relevant rights holder.
 
-Each publication should declare its creators, rights holders, content licence
-and any separate attachment licences. A licence on the Commons software does
-not apply automatically to indexed research. A licence on one research file
-does not relicense third-party attachments.
+Citation does not replace permission where permission is required.
 
-## 3. Cite the precise contribution
+Each Zenodo publication should deliberately declare creators, the known
+rights-holder statement, the publication licence, and any separate attachment
+licences.
 
-References should identify the exact result, version and scope used: a lemma,
-assumption, algorithm, code component, counterexample, failed replication or
-limitation. Distinguish borrowed material from the new contribution.
+The Commons software licence does not automatically apply to indexed research.
 
-For CRL publications, cite the specific Zenodo Version DOI and CRL identifier,
-not just a changing repository homepage or a Concept DOI. State which parts are
-used and which broader claims are not being relied upon. Preserve known
-relevant objections rather than citing only favourable support.
+## 3. Cite the exact contribution and scope
 
-## 4. Negative contributions deserve substantive credit
+Every CRL relation has a `scope`. State exactly what is being used: a lemma,
+assumption, algorithm, calculation, counterexample, failed replication,
+correction, or limitation.
 
-Counterexamples, failed replications, corrections and scoped negative results
-can change a conclusion or close an unproductive route. When used, they deserve
-a proper citation and an explanation of what they contributed.
+Use the specific Zenodo Version DOI and CRL record ID for the exact publication
+relied upon. Do not silently discard a known relevant objection when carrying a
+result forward.
 
-Acknowledgement supplements rather than replaces that citation. Where the
-contribution and subsequent involvement warrant co-authorship under the intended
-venue's rules, discuss it with the contributor; do not downgrade a substantive
-contribution to a generic thank-you. Conversely, citation or useful criticism
-does not automatically confer co-authorship of every subsequent paper.
+## 4. Negative contributions receive substantive credit
 
-Acknowledgements must not imply endorsement. Seek consent for wording that could
-imply endorsement or participation. A factual citation of a published objection
-is not a request for its author to approve the later paper.
+Counterexamples, failed replications, proof gaps, route closures, corrections,
+and other negative results can materially change a research direction.
 
-## 5. Publication consent has a clear boundary
+When such work is used, it should receive a proper citation and the later work
+should state what it changed. Acknowledgement may supplement that citation but
+should not replace it.
 
-For a joint or project-branded paper, agree the author list, contributions,
-licences, final text and submission with the relevant authors and rights holders.
-Do not add anyone as an author without consent. Obtain permission for reuse that
-is not already authorized by a licence or applicable law.
+Where intellectual contribution and later involvement satisfy the intended
+venue's authorship rules, discuss co-authorship with the contributor. Citation or
+useful criticism does not automatically make someone an author of every later
+paper.
 
-Independent papers may cite public work within the applicable rules. The author
-of a challenged result has **no Commons veto over legitimate independent
-criticism or a counterexample**. Agreement is required for joint authorship or
-unauthorized material reuse, not simply because the new work disagrees with an
-earlier author.
+Acknowledgement wording must not falsely imply endorsement.
 
-Maintainer status, account counts, compute donations, model brand and citation
-counts do not automatically determine authorship or author order.
+## 5. Publication consent
 
-## 6. Commercial arrangements remain undecided
+For a joint or project-branded paper, relevant human authors and rights holders
+should agree on authorship, contribution statements, licences, final text, and
+submission. Do not list someone as an author without consent.
 
-The Commons does not currently provide a collective commercial licence,
-exclusive rights, patent pool, revenue-sharing mechanism or authority to sell
-participants' research. Any later arrangement must identify the specific
-material, existing rights and permissions separately. Participation alone is
-not consent to such an arrangement.
+Independent researchers do not need an earlier author's approval merely to cite
+public work, publish a legitimate counterexample, or criticize a public claim.
+The author of a challenged result has no Commons veto over independent criticism.
 
-This does **not** suspend existing licences. MIT and CC BY already permit
-commercial use under their terms. Existing CC grants cannot be revoked for
-compliant recipients. A future project rule cannot retroactively remove those
-permissions. `Commercial policy pending` is not a substitute for an actual
-licence on a published object.
+Permission is required where an existing licence or applicable law does not
+already authorize the intended reuse.
 
-Contributors should deliberately select their publication's licence or express
-custom terms before release. The project should not silently choose one on
-their behalf. NonCommercial terms constrain some reuse; they do not create
-universal control over facts, ideas, patents or every downstream application.
+## 6. AI participation
 
-Before commercial negotiations or patent-sensitive disclosure, obtain advice
-for the relevant jurisdiction, institutions and contracts. This community
-policy is not a substitute for that review.
+AI involvement should be disclosed accurately under the rules of the target
+venue and relevant institutions. Running an AI, paying for compute, or holding a
+signing key does not by itself settle copyright ownership or authorship.
 
-## 7. Planned minimal indexing permission
+CRL records declarations and provenance; it does not adjudicate those questions.
 
-The planned Zenodo-backed profile separates a small signed discovery header
-from the complete research object. Its proposed `crl-discovery/1.0` permission
-would authorize compatible indexes, to the extent of rights controlled by the
-signer, to store, copy, display, export and redistribute that header, identifier,
-signature and verified archival locator for discovery, citation, verification
-and preservation of dispute context.
+## 7. Minimal discovery permission
 
-Attribution and integrity must be retained. A filtered view must not be presented
-as a complete global record. This proposed permission is non-exclusive and
-purpose-limited: it is not ownership transfer, a general commercial licence to
-the research body, a patent licence, endorsement or permission to run artifacts.
-The research content and attachments remain governed by their own terms.
+Every v0.3 index entry explicitly includes `crl-discovery/1.0`.
 
-It must be explicitly accepted in a future signed profile, not inferred from an
-old submission. Scientific withdrawal should not erase honest historical
-references; privacy, safety and legal removal duties still apply.
+By signing and submitting that header, the signer authorizes compatible CRL
+indexes, to the extent of rights the signer controls, to store, copy, display,
+export, mirror, and redistribute **that discovery header** for discovery,
+citation, integrity checking, and preservation of dispute context.
 
-## 8. Implementation status
+This permission is non-exclusive and limited to the signed header. It is not a
+transfer of ownership, a general licence to the archived research body, a patent
+licence, endorsement, or permission to execute artifacts.
 
-This is a policy draft. It does not itself add new validation, publication or
-licensing features to the client. Planned v0.3 fields for declared creators,
-rights holders and per-reference scope remain subject to the implementation
-and its review. They will be declarations, not verified legal findings.
+The Zenodo research object and attachments remain governed by their own terms.
 
-The current infrastructure [MIT licence](LICENSE) remains unchanged. This policy
-introduces no copyright assignment, mandatory commercial licence or automatic
-co-authorship. Existing publications keep their existing licences.
+## 8. Commercial arrangements remain undecided at Commons level
 
-## Primary reference points
+The Commons currently provides no collective commercial licence, patent pool,
+exclusive-rights mechanism, revenue-sharing rule, or authority to sell
+participants' research.
 
-- [Creative Commons licence choices](https://creativecommons.org/share-your-work/use-remix/cc-licenses/)
-- [Creative Commons FAQ: permissions and irrevocability](https://creativecommons.org/faq/)
-- [MIT licence](https://choosealicense.com/licenses/mit/)
-- [US Copyright Office: AI and copyrightability](https://copyright.gov/newsnet/2025/1060.html)
-- [ICMJE: AI use by authors](https://www.icmje.org/recommendations/browse/artificial-intelligence/ai-use-by-authors.html), an example of venue-specific rules rather than a universal mathematics authorship standard.
+Any future commercial arrangement must identify the particular material and the
+actual rights involved, then obtain permissions not already granted.
+
+Existing licences remain effective. If a publication licence already permits
+commercial use under stated conditions, a later Commons policy cannot
+retroactively remove that permission from compliant recipients.
+
+`Commercial policy pending` is therefore a Commons governance position, not a
+substitute for an actual publication licence.
+
+## 9. What the index verifies
+
+The v0.3 index records creator names, rights-holder statement, declared licence,
+signing key, exact Zenodo Version DOI, optional source commit, and scoped
+relations.
+
+These are signed declarations. The Commons does not automatically verify that
+the signer is the legal rights holder or that every attribution claim is correct.

@@ -1,79 +1,97 @@
 # Contributing
 
-A valid signature and a merged PR establish an admitted record, not a correct
-scientific claim. Anyone may contribute; no participant can vote a result true.
+The Commons is an index, not a submission venue for research bodies.
 
-## Submit a record
+## Keep research in your own workspace
 
-Use Python 3.11+ and the dependencies in `requirements.txt`. Fork the repository,
-work on a branch, and keep your signing key **outside** the repository:
+Personal GitHub repositories are encouraged but not required. Internal notes,
+code, prompts, computations, and manuscripts stay under your control.
+
+Do **not** submit proof text, datasets, papers, notebooks, or research code to this
+repository as CRL scientific submissions.
+
+## Publish first, index second
+
+A durable contribution has two steps:
+
+1. publish a signed `crl-publication.json` plus inspectable artifacts to Zenodo;
+2. submit one signed discovery header pointing to the exact Zenodo **Version DOI**.
+
+The Commons stores only the second object.
+
+### Sign the publication manifest
 
 ```bash
 python tools/crl.py keygen --out ~/.crl/identity.key
-cp examples/question.draft.json ../my-question.json
-# Edit the title, body, assumptions/scope, actor name, timestamp and references.
-# Select a content licence only for material you have permission to publish.
-python tools/crl.py sign ../my-question.json --key ~/.crl/identity.key
-python tools/crl.py validate
+cp examples/publication.draft.json ../my-publication.draft.json
+python tools/crl.py sign-publication ../my-publication.draft.json \
+  --key ~/.crl/identity.key --out ../crl-publication.json
+python tools/crl.py validate-publication ../crl-publication.json
 ```
 
-The signing command prints the generated path under `records/`. Commit only that
-one file and open a PR. Do not upload your key or the unsigned draft template.
-The key is stored unencrypted with owner-only file permissions on Unix: protect
-it as a credential. Different public keys do not prove different people.
+Keep the private key outside every repository.
 
-Use `QUESTION` for a bounded subproblem; `RESULT` for a claim or revision;
-`REVIEW` for a scoped inspection, objection, reproduction, or verification report.
-The exact fields and permitted relationships are in [spec/README.md](spec/README.md).
+### Publish to Zenodo
 
-Read context before extending a result:
+Upload `crl-publication.json` and the artifacts another researcher needs to
+inspect the contribution. Choose the publication licence deliberately; the
+Commons does not choose one for you.
+
+### Prepare the discovery header
 
 ```bash
-python tools/crl.py context crl:sha256:<64-hex-digest> > ../context.json
+python tools/crl.py prepare-index ../crl-publication.json \
+  --doi 10.5281/zenodo.<record> \
+  --zenodo-url https://zenodo.org/records/<record> \
+  --source-repository https://github.com/<owner>/<repo> \
+  --source-commit <40-hex-commit> \
+  --key ~/.crl/identity.key
 ```
 
-Include important known objections. `basis_snapshot` may be `null` when the
-available snapshot is not known; never invent a snapshot identifier. It is a
-self-reported input reference, not proof of reading or understanding.
+The source flags are optional but, when used, must be supplied together and point
+to an exact commit.
 
-## Corrections and disagreement
+The command writes:
 
-A revision is a new record with `revises` pointing to the earlier record.
-Reference a relevant review with `responds-to`. A reply is not an automatic
-resolution of an objection. Checks of an old version do not certify a new one.
+```text
+index/<2 hex>/<2 hex>/<64 hex>.json
+```
 
-An operator may withdraw their own record through a `RESULT` with
-`result_kind: withdrawal`, `answer_scope: none`, and one `withdraws` relation.
-The public key must match the target's key. Withdrawals do not erase history;
-corrections or withdrawals cannot be silently performed by another actor.
+Open a PR containing **only that new file**.
 
-Different keys, self-declared human/AI labels, and multiple supporting reports do
-not establish independent replication. Describe what was actually checked.
-Do not ask the founder to adjudicate ordinary scientific disagreement.
+## What the signed header means
 
-## Temporary work
+It declares the CRL record ID, exact Zenodo Version DOI, root problem, creators,
+rights statement, declared licence, optional pinned source repository, and
+scoped scientific relations. It also explicitly grants `crl-discovery/1.0`,
+which applies only to the discovery header.
 
-Open a **Work declaration** Issue to say what you are attempting and until when.
-It is non-exclusive and self-reported. Close it when finished; automatic expiry
-is not implemented. Closing an Issue does not mark a research problem solved.
+Indexing does not transfer ownership of the research body to the Commons.
 
-## Admission and governance
+## Scientific relations
 
-Only one **new**, signed, regular non-executable JSON file under
-`records/<first-two-hex>/<next-two-hex>/<full-digest>.json` can be auto-admitted.
-Maximum record size: 65,536 bytes. All referenced records must be available in
-this repository for the current transport profile. Root problem IDs must be in
-the existing registry. The registry entries are targets, not promises of results.
+- `QUESTION`: exactly one `subproblem-of`.
+- `RESULT`: at least one `addresses`; corrections use `revises`.
+- `REVIEW`: exactly one `reviews`.
 
-Changes to code, workflows, the schema, registry, licensing, or scientific
-acceptance policy remain governance/infrastructure changes. They are not handled
-by the record auto-admission lane. The PR check tests trusted base code, not code
-proposed in an infrastructure PR; maintainers must review and test such changes.
+Every relation includes a required `scope`. A reference means no more than that
+scope states.
 
-Automatic admission is optional and initially off. First-time fork approvals,
-branch protection, GitHub limits, and abuse handling can still require a
-maintainer. Never advertise this pilot as guaranteed zero-intervention hosting.
+A later REVIEW may criticize public work without the earlier author's permission.
+Joint authorship, project-branded papers, reuse permissions, and commercial rights
+are separate matters covered by [RIGHTS.md](RIGHTS.md).
 
-Artifacts remain external references. Admission checks do not fetch or execute
-proof programs. Operators must enforce their own budgets and execution sandbox.
-Only disclose material you are entitled to publish. See [SECURITY.md](SECURITY.md).
+## Partial federation
+
+An entry may refer to a valid CRL ID absent from this particular index. That is
+allowed. Clients must mark the context as partial rather than interpreting absence
+from one index as nonexistence.
+
+## Automatic admission
+
+The optional lane accepts only one new regular JSON file at the exact
+content-addressed `index/` path. It never auto-admits code, workflows, policy,
+registry changes, or multiple files.
+
+Admission checks structure and signatures using trusted base code. It does not
+fetch Zenodo or decide scientific validity.
