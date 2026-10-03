@@ -80,7 +80,8 @@ def inspect(api, repo: str, number: int, root: Path, expected_head: str | None =
     require(expected_head is None or head == expected_head, "PR changed; rerun validation")
 
     if pr["changed_files"] != 1:
-        return {"eligible": False, "reason": "governance-or-multi-file-change", "head": head}
+        return {"eligible": False, "reason": "governance-or-multi-file-change", "head": head,
+                "already_merged": already_merged}
 
     files = api(f"{prefix}/pulls/{number}/files?per_page=2")
     require(len(files) == 1, "file-list mismatch")
@@ -90,6 +91,7 @@ def inspect(api, repo: str, number: int, root: Path, expected_head: str | None =
             "eligible": False,
             "reason": "only-one-new-index-entry-is-auto-admissible",
             "head": head,
+            "already_merged": already_merged,
         }
     require(already_merged or not (root / changed["filename"]).exists(), "cannot replace an admitted index entry")
 
@@ -127,9 +129,10 @@ def inspect(api, repo: str, number: int, root: Path, expected_head: str | None =
     archive_report = archive_verifier(entry) if archive_verifier else {"zenodo_fetched": False, "archive_verified": False}
 
     fresh = api(f"{prefix}/pulls/{number}")
+    fresh_merged = fresh["state"] == "closed" and fresh.get("merged") is True
     require(fresh["head"]["sha"] == head and fresh["base"]["ref"] == "main"
             and fresh["base"]["repo"]["full_name"] == repo and fresh["changed_files"] == 1
-            and not fresh["draft"] and (fresh["state"] == "open" or (allow_merged and fresh.get("merged") is True)),
+            and not fresh["draft"] and (fresh["state"] == "open" or (allow_merged and fresh_merged)),
             "PR changed during validation")
     return {
         "eligible": True,
@@ -137,7 +140,7 @@ def inspect(api, repo: str, number: int, root: Path, expected_head: str | None =
         "record_id": rid,
         "path": changed["filename"],
         "blob_sha": item["sha"],
-        "already_merged": already_merged,
+        "already_merged": fresh_merged,
         "scientific_validity": "not-assessed",
         **archive_report,
     }
@@ -153,6 +156,15 @@ def admitted_on_main(api, repo, report):
     require(len(matches) == 1 and matches[0]["type"] == "blob" and matches[0]["mode"] == "100644"
             and matches[0]["sha"] == report["blob_sha"], "admitted header missing or differs on main")
     return commit
+
+
+def diagnose(api, repo, number, root, expected_head=None, archive_verifier=None):
+    """Read-only diagnosis may finish after the checked head has been admitted."""
+    report = inspect(api, repo, number, root, expected_head, archive_verifier, allow_merged=True)
+    if report.get("already_merged"):
+        require(report["eligible"], "merged PR is not an admissible index entry")
+        report["admission_commit"] = admitted_on_main(api, repo, report)
+    return report
 
 
 def apply(api, repo, number, root, expected_head=None, archive_verifier=verify_archive, local_head=None):
@@ -238,8 +250,8 @@ def main() -> int:
             report = recover(api, repo, root) if args.scan else apply(api, repo, args.pr, root, args.head)
         else:
             require(not args.scan, "recovery scan requires the explicit enabled --apply lane")
-            report = inspect(api, repo, args.pr, root, args.head,
-                             verify_archive if args.verify_archive else None)
+            report = diagnose(api, repo, args.pr, root, args.head,
+                              verify_archive if args.verify_archive else None)
         print(json.dumps(report))
         return 0
     except (KeyError, ValueError, OSError, ValidationError) as exc:
