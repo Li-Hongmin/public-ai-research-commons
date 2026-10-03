@@ -13,7 +13,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 import archive
 import crl
-from admission import apply, inspect, recover
+from admission import apply, diagnose, inspect, recover
 import test_crl as fixtures
 make_publication, make_entry = fixtures.make_publication, fixtures.make_entry
 from jsonschema import ValidationError
@@ -315,6 +315,80 @@ class ApplyTests(unittest.TestCase):
     def test_workflow_edit_not_merged_even_with_true_archive_stub(self):
         self.changed_path = ".github/workflows/pwn.yml"
         self.assertFalse(self.apply()["eligible"])
+        self.assertFalse(self.puts)
+
+    def diagnosis(self, api=None, head=None):
+        return diagnose(api or self.api, "owner/commons", 1, self.root,
+                        head or self.pr["head"]["sha"])
+
+    def test_diagnosis_open_pr_remains_readonly_and_unassessed(self):
+        report = self.diagnosis()
+        self.assertTrue(report["eligible"])
+        self.assertFalse(report["already_merged"])
+        self.assertFalse(report["archive_verified"])
+        self.assertEqual(report["scientific_validity"], "not-assessed")
+        self.assertFalse(self.puts)
+
+    def test_diagnosis_already_admitted_head_requires_main_readback(self):
+        self.apply()
+        self.puts.clear()
+        admitted = self.root / self.path
+        admitted.parent.mkdir(parents=True)
+        admitted.write_bytes(self.raw)
+        report = self.diagnosis()
+        self.assertTrue(report["already_merged"])
+        self.assertEqual(report["admission_commit"], self.live)
+        self.assertFalse(report["archive_verified"])
+        self.assertEqual(report["scientific_validity"], "not-assessed")
+        self.assertFalse(self.puts)
+
+    def test_diagnosis_merge_during_inspection_rechecks_main_without_write(self):
+        def raced_api(path, method="GET", data=None):
+            result = self.api(path, method, data)
+            if "/git/blobs/" in path:
+                self.pr.update(state="closed", merged=True)
+                self.live = "e" * 40
+            return result
+        report = self.diagnosis(raced_api)
+        self.assertTrue(report["already_merged"])
+        self.assertEqual(report["admission_commit"], self.live)
+        self.assertFalse(self.puts)
+
+    def test_diagnosis_closed_unmerged_and_draft_still_fail(self):
+        for state, merged, draft in (("closed", False, False), ("open", False, True),
+                                      ("closed", True, True)):
+            with self.subTest(state=state, merged=merged, draft=draft):
+                self.pr.update(state=state, merged=merged, draft=draft)
+                with self.assertRaisesRegex(ValueError, "closed or draft"):
+                    self.diagnosis()
+        self.assertFalse(self.puts)
+
+    def test_diagnosis_merged_stale_head_or_mismatched_main_still_fail(self):
+        self.pr.update(state="closed", merged=True)
+        with self.assertRaisesRegex(ValueError, "PR changed"):
+            self.diagnosis(head="c" * 40)
+        self.main_match = False
+        with self.assertRaisesRegex(ValueError, "missing or differs"):
+            self.diagnosis()
+        self.assertFalse(self.puts)
+
+    def test_diagnosis_merged_invalid_signature_still_fails(self):
+        self.pr.update(state="closed", merged=True)
+        bad = copy.deepcopy(self.entry)
+        bad["signature"] = ("0" if bad["signature"][0] != "0" else "1") + bad["signature"][1:]
+        self.raw = json.dumps(bad).encode()
+        with self.assertRaisesRegex(ValueError, "signature"):
+            self.diagnosis()
+        self.assertFalse(self.puts)
+
+    def test_diagnosis_merged_governance_changes_are_not_success(self):
+        self.pr.update(state="closed", merged=True, changed_files=2)
+        with self.assertRaisesRegex(ValueError, "not an admissible"):
+            self.diagnosis()
+        self.pr["changed_files"] = 1
+        self.changed_path = ".github/workflows/pwn.yml"
+        with self.assertRaisesRegex(ValueError, "not an admissible"):
+            self.diagnosis()
         self.assertFalse(self.puts)
 
 
