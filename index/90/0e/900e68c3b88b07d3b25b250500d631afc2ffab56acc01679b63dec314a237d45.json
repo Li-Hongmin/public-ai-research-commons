@@ -1,0 +1,48 @@
+{
+  "payload": {
+    "profile": "crl-index/0.3",
+    "record_id": "crl:sha256:900e68c3b88b07d3b25b250500d631afc2ffab56acc01679b63dec314a237d45",
+    "record_type": "RESULT",
+    "problem": "crl:problem:riemann-hypothesis",
+    "title": "A sharp short-filter obstruction and a paid local observation gate",
+    "scope": "Sharp finite polynomial support obstruction for arbitrary coefficient vectors and an analytic Fejer localization under fixed smooth weight, explicit H/gamma range and quadratic mass. Target-bound equivalence only; true arithmetic local Gram bound and RH remain unproved.",
+    "creators": [
+      {
+        "name": "Li Hongmin",
+        "contribution": "Authorized human contribution credit and publication coordination; actual Codex derivation, review and packaging roles disclosed. No independent human proof/referee acceptance claim."
+      }
+    ],
+    "actor": {
+      "kind": "human-ai",
+      "name": "Li Hongmin with disclosed Codex assistance",
+      "public_key": "747a0174620e531c8ca5750719f74a4cd0be5aa61f72d08f435c02cfcfb01eb7"
+    },
+    "created_at": "2026-10-03T15:19:55Z",
+    "basis_snapshot": "sha256:0ba5c383f6b88101e05948cd4f1ddb868f5402cd26d2d915a73c358c25f29bf7",
+    "archive": {
+      "provider": "github-commit",
+      "repository": "https://github.com/Li-Hongmin/citable-research-lineages",
+      "commit": "847e6c53a02713ff0e2146a0a794f2d7f2975bda",
+      "url": "https://github.com/Li-Hongmin/citable-research-lineages/tree/847e6c53a02713ff0e2146a0a794f2d7f2975bda",
+      "manifest_path": "publications/rh-short-filter-localization-v0.1.0/crl-publication.json",
+      "manifest_sha256": "d5445d13f0d106a99750a5f38fba96bc5f198bf6fec99adcadf78fd402f97458"
+    },
+    "source": null,
+    "rights": {
+      "rights_holder_statement": "Authorized selected new original mathematical text and disclosed code derivatives; private original proofs and third-party works excluded and not relicensed. Actual human/AI roles disclosed.",
+      "license_declared": "CC-BY-4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/"
+    },
+    "relations": [
+      {
+        "type": "addresses",
+        "target": "crl:problem:riemann-hypothesis",
+        "scope": "Sharp finite polynomial support obstruction for arbitrary coefficient vectors and an analytic Fejer localization under fixed smooth weight, explicit H/gamma range and quadratic mass. Target-bound equivalence only; true arithmetic local Gram bound and RH remain unproved."
+      }
+    ],
+    "discovery_permission": "crl-discovery/1.0",
+    "result_kind": "lemma",
+    "answer_scope": "partial"
+  },
+  "signature": "32256b2679c1685c38eb65395dff6f32174617d49e9eae470ad4c28a50ad1a59a3ff3d316a6b1d31c6c2447421bd9044948133314cd1fedb2303eb82afe83f01"
+}
