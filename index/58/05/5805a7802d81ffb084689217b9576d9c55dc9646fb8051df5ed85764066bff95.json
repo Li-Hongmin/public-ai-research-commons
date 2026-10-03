@@ -1,0 +1,48 @@
+{
+  "payload": {
+    "profile": "crl-index/0.3",
+    "record_id": "crl:sha256:5805a7802d81ffb084689217b9576d9c55dc9646fb8051df5ed85764066bff95",
+    "record_type": "RESULT",
+    "problem": "crl:problem:barnette",
+    "title": "A minimum two-row countermodel in a reduced boundary-support language",
+    "scope": "Only endpoint/equality/transpose/diagonal axioms, the stated four-vertex patch and finite two-row predicate. No full marked types, graph realization, CEN/UV reachability, novelty, independent referee acceptance or Barnette solution.",
+    "creators": [
+      {
+        "name": "Li Hongmin",
+        "contribution": "Authorized public contribution credit and publication coordination; Codex drafted the scoped argument and finite verifier. No claim that the human independently proved or refereed it."
+      }
+    ],
+    "actor": {
+      "kind": "human-ai",
+      "name": "Li Hongmin with disclosed Codex assistance",
+      "public_key": "747a0174620e531c8ca5750719f74a4cd0be5aa61f72d08f435c02cfcfb01eb7"
+    },
+    "created_at": "2026-10-03T14:29:48Z",
+    "basis_snapshot": null,
+    "archive": {
+      "provider": "github-commit",
+      "repository": "https://github.com/Li-Hongmin/citable-research-lineages",
+      "commit": "3f6d1f7165d96752d1886c01caaa5637b5006563",
+      "url": "https://github.com/Li-Hongmin/citable-research-lineages/tree/3f6d1f7165d96752d1886c01caaa5637b5006563",
+      "manifest_path": "publications/pilot-reduced-model-v0.1.0/crl-publication.json",
+      "manifest_sha256": "49c35c78555ecb7b3680e5fbef420ccd91360e79a136d46f53cc02d86b10ef2b"
+    },
+    "source": null,
+    "rights": {
+      "rights_holder_statement": "Explicit license and contributor credit for the already public original contribution; private ancestors and third-party materials are excluded and not relicensed.",
+      "license_declared": "CC-BY-4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/"
+    },
+    "relations": [
+      {
+        "type": "addresses",
+        "target": "crl:problem:barnette",
+        "scope": "A partial abstract support countermodel, not a graph counterexample or proof of the root conjecture."
+      }
+    ],
+    "discovery_permission": "crl-discovery/1.0",
+    "result_kind": "lemma",
+    "answer_scope": "partial"
+  },
+  "signature": "dc5c84c824507292b066f679f52c90345a3665558f9d8e44512335b43dba41e9db1fc5d58595730f04c55728e8d720cce5370da4032bcb938f0749cc05cdea09"
+}
