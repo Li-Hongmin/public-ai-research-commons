@@ -67,6 +67,13 @@
           "repository": null,
           "external_status_source": null,
           "crl_status": "not-started"
+        },
+        {
+          "id": "crl:problem:berge-fulkerson",
+          "title": "Berge-Fulkerson conjecture",
+          "repository": null,
+          "external_status_source": null,
+          "crl_status": "not-started"
         }
       ]
     }
