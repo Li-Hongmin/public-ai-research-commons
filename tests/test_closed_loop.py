@@ -2,6 +2,7 @@
 import base64
 import copy
 import hashlib
+import io
 import json
 from pathlib import Path
 import sys
@@ -167,6 +168,69 @@ class ArchiveTests(unittest.TestCase):
             client("https://api.github.com@evil.invalid/repos/fixture/archive", 100)
         with self.assertRaisesRegex(ValueError, "redirect"):
             archive.NoRedirect().redirect_request(None, None, 302, "", {}, "https://evil.invalid/")
+
+    def test_full_package_with_two_maximum_metadata_responses(self):
+        # Exercise the actual streaming/budget client, with only HTTP replaced.
+        p = copy.deepcopy(self.pub["payload"])
+        p["artifacts"] = [{"path": f"chunk{i}.bin", "sha256": "0" * 64,
+                           "description": "Synthetic boundary bytes", "license_declared": "TEST-LICENSE"}
+                          for i in range(4)]
+        manifest_size = len(json.dumps(crl.sign_publication(p, self.key)).encode())
+        contents = {f"chunk{i}.bin": bytes([i]) * (archive.MAX_FILE_BYTES if i < 3 else
+                    archive.MAX_TOTAL_BYTES - 3 * archive.MAX_FILE_BYTES - manifest_size) for i in range(4)}
+        for item in p["artifacts"]:
+            item["sha256"] = hashlib.sha256(contents[item["path"]]).hexdigest()
+        pub = crl.sign_publication(p, self.key)
+        contents["crl-publication.json"] = json.dumps(pub).encode()
+        self.assertEqual(sum(map(len, contents.values())), archive.MAX_TOTAL_BYTES)
+        header = crl.sign_index(crl.make_github_index_payload(pub, self.repository, self.commit, self.manifest), self.key)
+        tree = {"truncated": False, "tree": [{"path": "publications/finite/" + name, "type": "blob",
+                "mode": "100644", "sha": blob_sha(raw), "size": len(raw)} for name, raw in contents.items()]}
+
+        def padded_metadata(obj):
+            obj = {**obj, "padding": ""}
+            obj["padding"] = "x" * (archive.MAX_METADATA_BYTES - len(json.dumps(obj).encode()))
+            raw = json.dumps(obj).encode()
+            self.assertEqual(len(raw), archive.MAX_METADATA_BYTES)
+            return raw
+
+        metadata = {"https://api.github.com/repos/fixture/archive": padded_metadata(self.repo_meta),
+                    "https://api.github.com/repos/fixture/archive/git/trees/" + self.commit + "?recursive=1":
+                    padded_metadata(tree)}
+
+        class Response(io.BytesIO):
+            status = 200
+            def __init__(self, url, raw):
+                super().__init__(raw)
+                self.url, self.headers = url, {"Content-Length": str(len(raw))}
+            def geturl(self):
+                return self.url
+
+        def open_response(req, timeout):
+            url = req.full_url
+            return Response(url, metadata[url] if url in metadata else contents[url.rsplit("/", 1)[-1]])
+
+        client = archive.Zenodo(github=True)
+        with patch.object(client.opener, "open", side_effect=open_response):
+            report = archive.verify(header, client)
+        self.assertTrue(report["archive_verified"])
+        self.assertEqual(client.remaining, 1)  # One-byte EOF/oversize probe allowance.
+
+    def test_github_package_over_total_stops_before_artifact_reads(self):
+        for i in range(4):
+            self.tree["tree"].append({"path": f"publications/finite/chunk{i}.bin", "type": "blob",
+                                      "mode": "100644", "sha": "f" * 40, "size": archive.MAX_FILE_BYTES})
+        with self.assertRaisesRegex(ValueError, "package outside"):
+            archive.verify(self.header, self.fetch)
+        self.assertEqual(len(self.urls), 2)
+
+    def test_public_fetch_still_stops_at_caller_and_total_byte_limits(self):
+        client = archive.Zenodo(github=True)
+        client.remaining = 1
+        with patch.object(client.opener, "open") as op:
+            with self.assertRaisesRegex(ValueError, "byte budget"):
+                client("https://api.github.com/repos/fixture/archive", 2)
+            op.assert_not_called()
 
 
 class ApplyTests(unittest.TestCase):
