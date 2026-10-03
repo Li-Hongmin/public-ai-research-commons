@@ -1,0 +1,51 @@
+{
+  "payload": {
+    "profile": "crl-index/0.3",
+    "record_id": "crl:sha256:5d3ae52d7af3c288689b5759e732b7cc7f79d8f9c9a82c78bf3af664d91316d4",
+    "record_type": "REVIEW",
+    "problem": "crl:problem:barnette",
+    "title": "Barnette complete original note bodies and failure-route archive",
+    "scope": "Archive the 913 complete current original note bodies and their failed/corrected routes as historical context to the indexed result; artifact-check only, no corpus-wide mathematical acceptance.",
+    "creators": [
+      {
+        "name": "Li Hongmin",
+        "contribution": "Authorized human contribution credit and publication coordination; disclosed AI-assisted source research and Codex archival review/packaging. No independent human proof acceptance."
+      }
+    ],
+    "actor": {
+      "kind": "human-ai",
+      "name": "Li Hongmin with disclosed AI assistance",
+      "public_key": "747a0174620e531c8ca5750719f74a4cd0be5aa61f72d08f435c02cfcfb01eb7"
+    },
+    "created_at": "2026-10-03T18:26:26Z",
+    "basis_snapshot": "sha256:00f6c49fe024f7ad595aeed76215461d4b6d584bf647bad1338c5219a4a196d6",
+    "archive": {
+      "provider": "github-commit",
+      "repository": "https://github.com/Li-Hongmin/citable-research-lineages",
+      "commit": "f82211070a301fde259bf88fd319895a2b2cad30",
+      "url": "https://github.com/Li-Hongmin/citable-research-lineages/tree/f82211070a301fde259bf88fd319895a2b2cad30",
+      "manifest_path": "publications/barnette-complete-original-notes-archive-v0.1.1/crl-publication.json",
+      "manifest_sha256": "ab54bcdfd2a6f55ccafad867617b131ab4e94890e020118e1f4724a8f57739ae"
+    },
+    "source": null,
+    "rights": {
+      "rights_holder_statement": "User explicitly authorizes confirmed own original four-line text/data CC BY 4.0 and code Apache-2.0, with human contribution credit and disclosed AI roles. Third-party full text and private material excluded.",
+      "license_declared": "CC-BY-4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/"
+    },
+    "relations": [
+      {
+        "type": "reviews",
+        "target": "crl:sha256:0a9caef4b4cdb264ce31ca5d9db9d01f3df0caa61824ab13fb12837752306e10",
+        "scope": "Archive the 913 complete current original note bodies and their failed/corrected routes as historical context to the indexed result; artifact-check only, no corpus-wide mathematical acceptance."
+      }
+    ],
+    "discovery_permission": "crl-discovery/1.0",
+    "review": {
+      "outcome": "inconclusive",
+      "method": "artifact-check",
+      "scope": "Archive the 913 complete current original note bodies and their failed/corrected routes as historical context to the indexed result; artifact-check only, no corpus-wide mathematical acceptance."
+    }
+  },
+  "signature": "e268fee9172c4219249914eeeb41687ad2b2b1c0c34ccf9ed0b5a1472104a972737dd41896631eb0ec07e9c23db095c4feafdeb1718acfc1504a6c87510c1900"
+}
