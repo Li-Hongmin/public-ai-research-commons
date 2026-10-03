@@ -1,0 +1,51 @@
+{
+  "payload": {
+    "profile": "crl-index/0.3",
+    "record_id": "crl:sha256:c3806267edcb20c50021a45a444506c7ccc6caeb2e1703cd40db78e3ad2daf1c",
+    "record_type": "REVIEW",
+    "problem": "crl:problem:barnette",
+    "title": "Barnette finite interfaces and carrier source-input archive",
+    "scope": "Static archival artifact review of original source/input availability, localmodule/fixture closure and bounded historical checks; no fresh research execution or conjecture proof acceptance.",
+    "creators": [
+      {
+        "name": "Li Hongmin",
+        "contribution": "Authorized human contribution credit and publication coordination; disclosed AI-assisted source research and Codex archival review/packaging. No independent human proof acceptance."
+      }
+    ],
+    "actor": {
+      "kind": "human-ai",
+      "name": "Li Hongmin with disclosed AI assistance",
+      "public_key": "747a0174620e531c8ca5750719f74a4cd0be5aa61f72d08f435c02cfcfb01eb7"
+    },
+    "created_at": "2026-10-03T19:04:50Z",
+    "basis_snapshot": "sha256:00f6c49fe024f7ad595aeed76215461d4b6d584bf647bad1338c5219a4a196d6",
+    "archive": {
+      "provider": "github-commit",
+      "repository": "https://github.com/Li-Hongmin/citable-research-lineages",
+      "commit": "e56d9e1786017d0090b2e203bb72b3833113f81b",
+      "url": "https://github.com/Li-Hongmin/citable-research-lineages/tree/e56d9e1786017d0090b2e203bb72b3833113f81b",
+      "manifest_path": "publications/barnette-reproduction-sources-inputs-v0.1.0/crl-publication.json",
+      "manifest_sha256": "85365dfc80f57103174a3a461cda582fcc391e8314f2b5eb15cad69d2532406b"
+    },
+    "source": null,
+    "rights": {
+      "rights_holder_statement": "User explicitly authorizes confirmed own original four-line text/data CC BY 4.0 and code Apache-2.0, with human contribution credit and disclosed AI roles. Third-party full text and private material excluded.",
+      "license_declared": "CC-BY-4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/"
+    },
+    "relations": [
+      {
+        "type": "reviews",
+        "target": "crl:sha256:0a9caef4b4cdb264ce31ca5d9db9d01f3df0caa61824ab13fb12837752306e10",
+        "scope": "Static archival artifact review of original source/input availability, localmodule/fixture closure and bounded historical checks; no fresh research execution or conjecture proof acceptance."
+      }
+    ],
+    "discovery_permission": "crl-discovery/1.0",
+    "review": {
+      "outcome": "inconclusive",
+      "method": "artifact-check",
+      "scope": "Static archival artifact review of original source/input availability, localmodule/fixture closure and bounded historical checks; no fresh research execution or conjecture proof acceptance."
+    }
+  },
+  "signature": "648b7b39eb791def6fca91526e2e3e789ddf2f02807de5e5126fa05e242eb6a071eb7e9da8dc9e0c8a66f013bd870ca145289179e500f63f7fd252d13c87440e"
+}
