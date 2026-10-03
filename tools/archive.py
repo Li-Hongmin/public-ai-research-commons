@@ -46,7 +46,9 @@ class Zenodo:
     def __init__(self, github=False):
         self.opener = urllib.request.build_opener(NoRedirect())
         self.deadline = time.monotonic() + MAX_SECONDS
-        self.remaining = MAX_TOTAL_BYTES + MAX_METADATA_BYTES
+        # Both providers read two metadata responses. Package bytes remain
+        # capped separately at 32 MiB; reserve one byte for a caller's EOF probe.
+        self.remaining = MAX_TOTAL_BYTES + 2 * MAX_METADATA_BYTES + 1
         self.github = github
 
     def __call__(self, url, limit):
