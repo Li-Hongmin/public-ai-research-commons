@@ -1,0 +1,51 @@
+{
+  "payload": {
+    "profile": "crl-index/0.3",
+    "record_id": "crl:sha256:894c4e41952742bcc08d526e56a3d710534eb3ce006a1ec391974827dc86a577",
+    "record_type": "REVIEW",
+    "problem": "crl:problem:barnette",
+    "title": "Frozen Barnette producer texts and conditional application interfaces",
+    "scope": "Preserve the two frozen producer sources of the indexed square-splicing result and distinguish its self-contained proof from unclosed application-profile and exterior-seam interfaces. Artifact-check only; no new theorem or independent acceptance.",
+    "creators": [
+      {
+        "name": "Li Hongmin",
+        "contribution": "Authorized human contribution credit and publication coordination; disclosed AI-assisted source research and Codex archival review/packaging. No independent human proof acceptance."
+      }
+    ],
+    "actor": {
+      "kind": "human-ai",
+      "name": "Li Hongmin with disclosed AI assistance",
+      "public_key": "747a0174620e531c8ca5750719f74a4cd0be5aa61f72d08f435c02cfcfb01eb7"
+    },
+    "created_at": "2026-10-03T17:36:01Z",
+    "basis_snapshot": "sha256:00f6c49fe024f7ad595aeed76215461d4b6d584bf647bad1338c5219a4a196d6",
+    "archive": {
+      "provider": "github-commit",
+      "repository": "https://github.com/Li-Hongmin/citable-research-lineages",
+      "commit": "f389ab6abf3c1f487889128a5559bd2d5196c595",
+      "url": "https://github.com/Li-Hongmin/citable-research-lineages/tree/f389ab6abf3c1f487889128a5559bd2d5196c595",
+      "manifest_path": "publications/barnette-producer-interface-archive-v0.1.0/crl-publication.json",
+      "manifest_sha256": "5e8a7f532eec05b280c47ec0a18cf9030e0a3b33afedecf919f21e439e003ede"
+    },
+    "source": null,
+    "rights": {
+      "rights_holder_statement": "User explicitly authorizes confirmed own original four-line text/data CC BY 4.0 and code Apache-2.0, with human contribution credit and disclosed AI roles. Third-party full text and private material excluded.",
+      "license_declared": "CC-BY-4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/"
+    },
+    "relations": [
+      {
+        "type": "reviews",
+        "target": "crl:sha256:0a9caef4b4cdb264ce31ca5d9db9d01f3df0caa61824ab13fb12837752306e10",
+        "scope": "Preserve the two frozen producer sources of the indexed square-splicing result and distinguish its self-contained proof from unclosed application-profile and exterior-seam interfaces. Artifact-check only; no new theorem or independent acceptance."
+      }
+    ],
+    "discovery_permission": "crl-discovery/1.0",
+    "review": {
+      "outcome": "inconclusive",
+      "method": "artifact-check",
+      "scope": "Preserve the two frozen producer sources of the indexed square-splicing result and distinguish its self-contained proof from unclosed application-profile and exterior-seam interfaces. Artifact-check only; no new theorem or independent acceptance."
+    }
+  },
+  "signature": "8fb45c9d9bbf91aab1674790cf73af9392ece73120e28b493610678b2d8d141cac660eab6e925847a86d5aea65061f40b76f2b73287e216363a5637bea1fe102"
+}
