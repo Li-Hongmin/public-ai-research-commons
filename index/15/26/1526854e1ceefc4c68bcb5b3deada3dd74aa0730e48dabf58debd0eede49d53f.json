@@ -1,0 +1,51 @@
+{
+  "payload": {
+    "profile": "crl-index/0.3",
+    "record_id": "crl:sha256:1526854e1ceefc4c68bcb5b3deada3dd74aa0730e48dabf58debd0eede49d53f",
+    "record_type": "REVIEW",
+    "problem": "crl:problem:riemann-hypothesis",
+    "title": "Riemann hypothesis complete original note bodies and arithmetic stopping archive",
+    "scope": "Archive the 930 complete current original note bodies and their failed/corrected routes as historical context to the indexed result; artifact-check only, no corpus-wide mathematical acceptance.",
+    "creators": [
+      {
+        "name": "Li Hongmin",
+        "contribution": "Authorized human contribution credit and publication coordination; disclosed AI-assisted source research and Codex archival review/packaging. No independent human proof acceptance."
+      }
+    ],
+    "actor": {
+      "kind": "human-ai",
+      "name": "Li Hongmin with disclosed AI assistance",
+      "public_key": "747a0174620e531c8ca5750719f74a4cd0be5aa61f72d08f435c02cfcfb01eb7"
+    },
+    "created_at": "2026-10-03T18:26:31Z",
+    "basis_snapshot": "sha256:00f6c49fe024f7ad595aeed76215461d4b6d584bf647bad1338c5219a4a196d6",
+    "archive": {
+      "provider": "github-commit",
+      "repository": "https://github.com/Li-Hongmin/citable-research-lineages",
+      "commit": "f82211070a301fde259bf88fd319895a2b2cad30",
+      "url": "https://github.com/Li-Hongmin/citable-research-lineages/tree/f82211070a301fde259bf88fd319895a2b2cad30",
+      "manifest_path": "publications/rh-complete-original-notes-archive-v0.1.1/crl-publication.json",
+      "manifest_sha256": "3d8010bc55a83773d2c371a2a0563419721f00a5a56e615c56643f8d8a429b54"
+    },
+    "source": null,
+    "rights": {
+      "rights_holder_statement": "User explicitly authorizes confirmed own original four-line text/data CC BY 4.0 and code Apache-2.0, with human contribution credit and disclosed AI roles. Third-party full text and private material excluded.",
+      "license_declared": "CC-BY-4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/"
+    },
+    "relations": [
+      {
+        "type": "reviews",
+        "target": "crl:sha256:900e68c3b88b07d3b25b250500d631afc2ffab56acc01679b63dec314a237d45",
+        "scope": "Archive the 930 complete current original note bodies and their failed/corrected routes as historical context to the indexed result; artifact-check only, no corpus-wide mathematical acceptance."
+      }
+    ],
+    "discovery_permission": "crl-discovery/1.0",
+    "review": {
+      "outcome": "inconclusive",
+      "method": "artifact-check",
+      "scope": "Archive the 930 complete current original note bodies and their failed/corrected routes as historical context to the indexed result; artifact-check only, no corpus-wide mathematical acceptance."
+    }
+  },
+  "signature": "4fbf8ff8b4b8e063affb577ba300240e75f9311f37b505719564c8b66f458ef378f647462be759b68f1604ba6078cb0c4649a8dc58fecc2a8e1fc28a0c896a06"
+}
