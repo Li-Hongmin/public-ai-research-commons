@@ -46,3 +46,30 @@ relationship explicitly with `revises`, `responds-to`, or another scoped
 relation. Do not silently replace the earlier result.
 
 Choose the publication licence deliberately. The Commons does not choose it.
+
+## GitHub commit snapshot (without a DOI)
+
+Place the signed `crl-publication.json` and exactly its declared artifacts in one
+dedicated directory of an authorized public contributor repository. Artifact paths
+are relative to that directory. Commit the approved public selection, then obtain
+the full containing SHA. Sign publication before that commit and index afterward:
+publication must not include its future containing commit or own file hash.
+
+```bash
+python tools/crl.py prepare-index ../crl-publication.json \
+  --archive-repository https://github.com/<owner>/<repo> \
+  --archive-commit <40-hex-commit> \
+  --manifest-path publications/<version>/crl-publication.json \
+  --key <existing-authorized-key>
+```
+
+Archive fields: provider `github-commit`, repository, commit, exact URL,
+manifest_path, and manifest_sha256 (signed envelope JCS SHA256). Artifact hashes
+remain byte SHA256; CRL ID/signature domains are unchanged. A commit is a pinned
+public snapshot, not a DOI or a guarantee of permanent hosting. Submit only the
+new generated header in a separate PR; root registration requires separate review.
+Admission treats archive bytes as inert data and scientific validity as not-assessed.
+Zenodo Version DOI mode remains compatible; do not mix mode flags.
+This is an additive archive-provider extension in this reference implementation:
+older v0.3 validators accept the existing Zenodo entries but need this schema/CLI
+update to understand GitHub commit entries. Do not claim universal peer support.

@@ -55,6 +55,20 @@
           "crl_status": "not-started"
         }
       ]
+    },
+    {
+      "id": "graph-conjectures",
+      "title": "Graph Conjectures",
+      "description": "Bounded work on graph conjectures; index inclusion is not a verdict on a conjecture.",
+      "problems": [
+        {
+          "id": "crl:problem:barnette",
+          "title": "Barnette's conjecture",
+          "repository": null,
+          "external_status_source": null,
+          "crl_status": "not-started"
+        }
+      ]
     }
   ]
 }
