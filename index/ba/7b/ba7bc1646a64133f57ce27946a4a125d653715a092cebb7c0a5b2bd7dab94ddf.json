@@ -1,0 +1,51 @@
+{
+  "payload": {
+    "profile": "crl-index/0.3",
+    "record_id": "crl:sha256:ba7bc1646a64133f57ce27946a4a125d653715a092cebb7c0a5b2bd7dab94ddf",
+    "record_type": "REVIEW",
+    "problem": "crl:problem:p-vs-np",
+    "title": "P versus NP original RW, MCSP and THR2 note-body archive",
+    "scope": "Archive the 1126 complete current original note bodies and their failed/corrected routes as historical context to the indexed result; artifact-check only, no corpus-wide mathematical acceptance.",
+    "creators": [
+      {
+        "name": "Li Hongmin",
+        "contribution": "Authorized human contribution credit and publication coordination; disclosed AI-assisted source research and Codex archival review/packaging. No independent human proof acceptance."
+      }
+    ],
+    "actor": {
+      "kind": "human-ai",
+      "name": "Li Hongmin with disclosed AI assistance",
+      "public_key": "747a0174620e531c8ca5750719f74a4cd0be5aa61f72d08f435c02cfcfb01eb7"
+    },
+    "created_at": "2026-10-03T18:26:30Z",
+    "basis_snapshot": "sha256:00f6c49fe024f7ad595aeed76215461d4b6d584bf647bad1338c5219a4a196d6",
+    "archive": {
+      "provider": "github-commit",
+      "repository": "https://github.com/Li-Hongmin/citable-research-lineages",
+      "commit": "f82211070a301fde259bf88fd319895a2b2cad30",
+      "url": "https://github.com/Li-Hongmin/citable-research-lineages/tree/f82211070a301fde259bf88fd319895a2b2cad30",
+      "manifest_path": "publications/nnp-complete-original-notes-archive-v0.1.1/crl-publication.json",
+      "manifest_sha256": "6e342b1b2ba78fec36b7145aceb45455857a3bb7c1dd7d30f8d00378a0b794fb"
+    },
+    "source": null,
+    "rights": {
+      "rights_holder_statement": "User explicitly authorizes confirmed own original four-line text/data CC BY 4.0 and code Apache-2.0, with human contribution credit and disclosed AI roles. Third-party full text and private material excluded.",
+      "license_declared": "CC-BY-4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/"
+    },
+    "relations": [
+      {
+        "type": "reviews",
+        "target": "crl:sha256:8af889073f64d966d78ae1cf07e547f32a6074746aed01a39de7ca3f34f4df8c",
+        "scope": "Archive the 1126 complete current original note bodies and their failed/corrected routes as historical context to the indexed result; artifact-check only, no corpus-wide mathematical acceptance."
+      }
+    ],
+    "discovery_permission": "crl-discovery/1.0",
+    "review": {
+      "outcome": "inconclusive",
+      "method": "artifact-check",
+      "scope": "Archive the 1126 complete current original note bodies and their failed/corrected routes as historical context to the indexed result; artifact-check only, no corpus-wide mathematical acceptance."
+    }
+  },
+  "signature": "cec10e8d6799055497c28682db68f91a9c407f86bb4c6b247dbc5db20fc91925640d96716f1db2df707c6939c91e430434afa622fcae74627bf73aca5d98d70f"
+}
