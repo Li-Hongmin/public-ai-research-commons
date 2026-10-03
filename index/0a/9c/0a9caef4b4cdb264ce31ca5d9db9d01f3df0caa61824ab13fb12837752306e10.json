@@ -1,0 +1,48 @@
+{
+  "payload": {
+    "profile": "crl-index/0.3",
+    "record_id": "crl:sha256:0a9caef4b4cdb264ce31ca5d9db9d01f3df0caa61824ab13fb12837752306e10",
+    "record_type": "RESULT",
+    "problem": "crl:problem:barnette",
+    "title": "Square splicing preserves protected edges with zero, two or four arbitrary terminals",
+    "scope": "Finite simple graph; specified pairwise disjoint square supports, degree-one/two pattern, 0/2/4 terminals and connected restored-edge quotient. Protected edges outside removable rails survive. No graph-profile existence, general Barnette theorem or novelty claim.",
+    "creators": [
+      {
+        "name": "Li Hongmin",
+        "contribution": "Authorized human contribution credit and publication coordination; actual Codex derivation, review and packaging roles disclosed. No independent human proof/referee acceptance claim."
+      }
+    ],
+    "actor": {
+      "kind": "human-ai",
+      "name": "Li Hongmin with disclosed Codex assistance",
+      "public_key": "747a0174620e531c8ca5750719f74a4cd0be5aa61f72d08f435c02cfcfb01eb7"
+    },
+    "created_at": "2026-10-03T15:19:55Z",
+    "basis_snapshot": "sha256:0ba5c383f6b88101e05948cd4f1ddb868f5402cd26d2d915a73c358c25f29bf7",
+    "archive": {
+      "provider": "github-commit",
+      "repository": "https://github.com/Li-Hongmin/citable-research-lineages",
+      "commit": "847e6c53a02713ff0e2146a0a794f2d7f2975bda",
+      "url": "https://github.com/Li-Hongmin/citable-research-lineages/tree/847e6c53a02713ff0e2146a0a794f2d7f2975bda",
+      "manifest_path": "publications/barnette-square-splicing-v0.1.0/crl-publication.json",
+      "manifest_sha256": "07870b0ad745e34400f8237e40e2a617c53a11ec0377d49f683ed27c5f42534b"
+    },
+    "source": null,
+    "rights": {
+      "rights_holder_statement": "Authorized selected new original mathematical text and disclosed code derivatives; private original proofs and third-party works excluded and not relicensed. Actual human/AI roles disclosed.",
+      "license_declared": "CC-BY-4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/"
+    },
+    "relations": [
+      {
+        "type": "addresses",
+        "target": "crl:problem:barnette",
+        "scope": "Finite simple graph; specified pairwise disjoint square supports, degree-one/two pattern, 0/2/4 terminals and connected restored-edge quotient. Protected edges outside removable rails survive. No graph-profile existence, general Barnette theorem or novelty claim."
+      }
+    ],
+    "discovery_permission": "crl-discovery/1.0",
+    "result_kind": "lemma",
+    "answer_scope": "partial"
+  },
+  "signature": "0ba228aedabbffc74f670aba774962d6f6dadd5dc7136fa685a2d02716053698e06054e8dc53b5d6d5765b8ddb2a9d27d811deb77f26e5f3a4e16913abff4602"
+}
