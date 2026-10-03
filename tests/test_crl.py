@@ -1,5 +1,6 @@
 import base64
 import copy
+import hashlib
 import json
 import sys
 import tempfile
@@ -227,16 +228,17 @@ class AdmissionTests(unittest.TestCase):
         self.changed_path = self.path
 
     def api(self, path, method="GET", data=None):
+        blob_sha = hashlib.sha1(b"blob " + str(len(self.raw)).encode() + b"\0" + self.raw).hexdigest()
         if path.endswith("/pulls/1"):
             return copy.deepcopy(self.pr)
         if "/pulls/1/files" in path:
-            return [{"filename": self.changed_path, "status": "added", "sha": "b" * 40}]
+            return [{"filename": self.changed_path, "status": "added", "sha": blob_sha}]
         if "/git/trees/" in path:
             return {
                 "truncated": False,
                 "tree": [{
                     "path": self.path,
-                    "sha": "b" * 40,
+                    "sha": blob_sha,
                     "mode": self.mode,
                     "type": "blob",
                     "size": len(self.raw),

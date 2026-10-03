@@ -134,39 +134,82 @@
           ]
         },
         "archive": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "provider",
-            "doi",
-            "url",
-            "manifest_path",
-            "manifest_sha256"
-          ],
-          "properties": {
-            "provider": {
-              "const": "zenodo"
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "provider",
+                "doi",
+                "url",
+                "manifest_path",
+                "manifest_sha256"
+              ],
+              "properties": {
+                "provider": {
+                  "const": "zenodo"
+                },
+                "doi": {
+                  "type": "string",
+                  "pattern": "^10\\.5281/zenodo\\.[0-9]+$"
+                },
+                "concept_doi": {
+                  "type": "string",
+                  "pattern": "^10\\.5281/zenodo\\.[0-9]+$"
+                },
+                "url": {
+                  "type": "string",
+                  "pattern": "^https://zenodo\\.org/records/[0-9]+$"
+                },
+                "manifest_path": {
+                  "const": "crl-publication.json"
+                },
+                "manifest_sha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              }
             },
-            "doi": {
-              "type": "string",
-              "pattern": "^10\\.5281/zenodo\\.[0-9]+$"
-            },
-            "concept_doi": {
-              "type": "string",
-              "pattern": "^10\\.5281/zenodo\\.[0-9]+$"
-            },
-            "url": {
-              "type": "string",
-              "pattern": "^https://zenodo\\.org/records/[0-9]+$"
-            },
-            "manifest_path": {
-              "const": "crl-publication.json"
-            },
-            "manifest_sha256": {
-              "type": "string",
-              "pattern": "^[0-9a-f]{64}$"
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "provider",
+                "repository",
+                "commit",
+                "url",
+                "manifest_path",
+                "manifest_sha256"
+              ],
+              "properties": {
+                "provider": {
+                  "const": "github-commit"
+                },
+                "repository": {
+                  "type": "string",
+                  "pattern": "^https://github\\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+                },
+                "commit": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{40}$"
+                },
+                "url": {
+                  "type": "string",
+                  "pattern": "^https://github\\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/tree/[0-9a-f]{40}$"
+                },
+                "manifest_path": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1024,
+                  "pattern": "^(?!/)(?!.*\\.\\.)[^\\u0000]+/crl-publication\\.json$|^crl-publication\\.json$"
+                },
+                "manifest_sha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              }
             }
-          }
+          ]
         },
         "source": {
           "anyOf": [

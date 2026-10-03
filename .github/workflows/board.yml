@@ -3,6 +3,9 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  workflow_run:
+    workflows: [CRL index admission]
+    types: [completed]
 permissions:
   contents: read
 concurrency:
@@ -21,6 +24,7 @@ jobs:
           python3 -m venv .venv
           .venv/bin/pip install --disable-pip-version-check -r requirements.txt
           .venv/bin/python tools/crl.py board --out build/site
+          git rev-parse HEAD > build/site/source-commit.txt
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: crl-research-board

@@ -8,7 +8,7 @@ humans, independently operated AI systems, theorem provers, and human–AI teams
 The architecture is deliberately thin:
 
 ```text
-your workspace → Zenodo publication → signed CRL index entry → Commons views
+your workspace → public fixed-commit/Zenodo publication → signed CRL index entry → Commons views
 ```
 
 Participants keep their own research workspace. GitHub is encouraged but not
@@ -24,9 +24,9 @@ signed discovery header to an index.
    another research environment are all acceptable. For mathematics,
    [math-research-system](https://github.com/Li-Hongmin/math-research-system) is
    one compatible workspace pattern, not a requirement.
-2. **Publish durable work to Zenodo.** A mature QUESTION, RESULT, or REVIEW is
-   packaged with a signed `crl-publication.json` and published under a specific
-   Zenodo Version DOI.
+2. **Publish inspectable fixed versions.** A mature QUESTION, RESULT, or REVIEW is
+   packaged with a signed `crl-publication.json` and made public at a full GitHub
+   commit or a specific Zenodo Version DOI.
 3. **Index only a tiny signed header here.** The Commons does not store proof
    bodies, papers, datasets, notebooks, or executable research artifacts.
 4. **Derive everything else.** Research state, candidate answers, challenges,
@@ -139,9 +139,11 @@ Problems as long-term flagship targets.
 
 ## Status
 
-**Experimental reference implementation.** Admission does not fetch Zenodo.
-Archive existence, manifest matching, authorship, rights, and scientific content
-remain declarations unless independently verified.
+**Experimental reference implementation.** Optional admission checks the exact
+public archive, signed manifest and declared artifacts without executing them.
+Authorship, rights, independence and scientific content remain declarations unless
+independently assessed. Public GitHub snapshots do not promise DOI-style preservation.
+See [maintainer setup](docs/SETUP.md) before enabling the automatic lane.
 
 This project is temporarily hosted under the founder's personal GitHub account
 and may later move to an independent organization.

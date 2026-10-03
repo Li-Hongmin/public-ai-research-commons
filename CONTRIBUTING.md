@@ -14,8 +14,12 @@ repository as CRL scientific submissions.
 
 A durable contribution has two steps:
 
-1. publish a signed `crl-publication.json` plus inspectable artifacts to Zenodo;
-2. submit one signed discovery header pointing to the exact Zenodo **Version DOI**.
+1. make a signed `crl-publication.json` plus inspectable artifacts publicly readable
+   at a fixed full GitHub commit, or publish them under a Zenodo Version DOI;
+2. submit one signed discovery header pointing to that exact archive.
+
+See [the GitHub commit flow](docs/PUBLISHING.md#github-commit-snapshot-without-a-doi)
+for dedicated package-directory conventions.
 
 The Commons stores only the second object.
 
@@ -93,5 +97,5 @@ The optional lane accepts only one new regular JSON file at the exact
 content-addressed `index/` path. It never auto-admits code, workflows, policy,
 registry changes, or multiple files.
 
-Admission checks structure and signatures using trusted base code. It does not
-fetch Zenodo or decide scientific validity.
+Admission checks structure, signatures and exact public archive bytes using
+trusted base code. It never executes artifacts or decides scientific validity.

@@ -171,9 +171,17 @@ def validate_index(entry: dict) -> None:
     require(len(canonical(entry)) <= MAX_INDEX_BYTES, "index entry too large")
     payload = entry["payload"]
     _verify(payload, entry["signature"], INDEX_DOMAIN)
-    suffix = payload["archive"]["doi"].rsplit(".", 1)[-1]
-    require(payload["archive"]["url"] == "https://zenodo.org/records/" + suffix,
-            "Zenodo DOI and record URL disagree")
+    archive = payload["archive"]
+    if archive["provider"] == "zenodo":
+        suffix = archive["doi"].rsplit(".", 1)[-1]
+        require(archive["url"] == "https://zenodo.org/records/" + suffix,
+                "Zenodo DOI and record URL disagree")
+    else:
+        require(archive["url"] == archive["repository"] + "/tree/" + archive["commit"],
+                "GitHub repository/commit URL disagree")
+        path = archive["manifest_path"]
+        require("\\" not in path and all(p not in {"", ".", ".."} for p in path.split("/"))
+                and not any(ord(c) < 32 for c in path), "unsafe GitHub manifest path")
     _validate_relations(payload["record_type"], payload["relations"], payload)
 
 
@@ -388,12 +396,15 @@ def write_board(output: Path, index: dict[str, dict], registry: dict[str, dict])
             for e in p["relations"]
         )
         archive = p["archive"]
+        archive_link = (f'<p>Zenodo Version DOI: <a href="{esc(archive["url"])}">{esc(archive["doi"])}</a></p>'
+                        if archive["provider"] == "zenodo" else
+                        f'<p>GitHub commit snapshot: <a href="{esc(archive["url"])}">{esc(archive["commit"])}</a></p>')
         cards.append(
             f'<article id="{esc(p["record_id"])}">'
             f'<h2>{esc(p["record_type"])} · {esc(p["title"])}</h2>'
             f'<p><code>{esc(p["record_id"])}</code></p>'
             f'<p>{esc(p["scope"])}</p>'
-            f'<p>Zenodo Version DOI: <a href="{esc(archive["url"])}">{esc(archive["doi"])}</a></p>'
+            f'{archive_link}'
             f'<p>Licence declared: {esc(p["rights"]["license_declared"])}</p>'
             f'<ul>{links}</ul></article>'
         )
@@ -408,7 +419,7 @@ def write_board(output: Path, index: dict[str, dict], registry: dict[str, dict])
         'padding:.8rem;border-bottom:1px solid}article{border-top:1px solid;margin-top:2rem;'
         'padding-top:1rem}code{overflow-wrap:anywhere}</style>'
         '<h1>Public AI Research Commons</h1>'
-        '<p>Zenodo-backed discovery index · observed records, not a scientific verdict.</p>'
+        '<p>Version-pinned discovery index · observed records, not a scientific verdict.</p>'
         '<p><a href="board.json">Machine-readable snapshot</a></p>'
         f'<p>{esc(data["warning"])}</p><small>Snapshot: {esc(data["snapshot"]["id"])}</small>'
         '<table><tr><th>Question</th><th>Observed progress</th><th>Candidate answers</th>'
@@ -461,6 +472,17 @@ def make_index_payload(publication: dict, doi: str, zenodo_url: str,
     return payload
 
 
+def make_github_index_payload(publication: dict, repository: str, commit: str,
+                              manifest_path: str = "crl-publication.json") -> dict:
+    validate_publication(publication)
+    # Reuse the shared header projection; replace only the archive declaration.
+    payload = make_index_payload(publication, "", "")
+    payload["archive"] = {"provider": "github-commit", "repository": repository,
+                          "commit": commit, "url": repository + "/tree/" + commit,
+                          "manifest_path": manifest_path, "manifest_sha256": digest(publication)}
+    return payload
+
+
 def _write_signed_index(entry: dict, directory: Path) -> Path:
     path = directory / index_path(entry["payload"]["record_id"])
     require(not path.exists(), "index entry already exists")
@@ -486,8 +508,11 @@ def main(argv: list[str] | None = None) -> int:
 
     p = sub.add_parser("prepare-index")
     p.add_argument("publication", type=Path)
-    p.add_argument("--doi", required=True)
-    p.add_argument("--zenodo-url", required=True)
+    p.add_argument("--doi")
+    p.add_argument("--zenodo-url")
+    p.add_argument("--archive-repository")
+    p.add_argument("--archive-commit")
+    p.add_argument("--manifest-path", default="crl-publication.json")
     p.add_argument("--concept-doi")
     p.add_argument("--source-repository")
     p.add_argument("--source-commit")
@@ -545,10 +570,19 @@ def main(argv: list[str] | None = None) -> int:
             pubkey = key.public_key().public_bytes_raw().hex()
             require(publication["payload"]["actor"]["public_key"] == pubkey,
                     "index signer must match publication signer")
-            payload = make_index_payload(
-                publication, args.doi, args.zenodo_url, args.source_repository,
-                args.source_commit, args.concept_doi
-            )
+            if args.archive_repository or args.archive_commit:
+                require(bool(args.archive_repository and args.archive_commit), "archive repository/commit are paired")
+                require(not any((args.doi, args.zenodo_url, args.concept_doi,
+                                 args.source_repository, args.source_commit)), "archive modes cannot be mixed")
+                payload = make_github_index_payload(publication, args.archive_repository, args.archive_commit,
+                                                   args.manifest_path)
+            else:
+                require(bool(args.doi and args.zenodo_url), "Zenodo DOI/URL or GitHub archive repository/commit required")
+                require(args.manifest_path == "crl-publication.json", "Zenodo manifest path is fixed")
+                payload = make_index_payload(
+                    publication, args.doi, args.zenodo_url, args.source_repository,
+                    args.source_commit, args.concept_doi
+                )
             entry = sign_index(payload, key)
             validate_index(entry)
             test_index = dict(index)

@@ -1,13 +1,20 @@
-name: Optional CRL admission
+name: CRL index admission
 on:
-  workflow_run:
-    workflows: [CRL checks]
-    types: [completed]
+  # The workflow and checkout come from trusted main, never the contributor head.
+  pull_request_target:
+    branches: [main]
+    types: [opened, reopened, synchronize, ready_for_review]
+  schedule:
+    - cron: '17 * * * *'  # Bounded recovery of skipped/failed events; still opt-in.
   workflow_dispatch:
     inputs:
       pr:
         description: Pull request number to revalidate
         required: true
+        type: string
+      head:
+        description: Optional exact head SHA for a pinned manual retry
+        required: false
         type: string
 permissions: {}
 concurrency:
@@ -15,18 +22,12 @@ concurrency:
   cancel-in-progress: false
 jobs:
   admit:
-    if: >-
-      vars.CRL_AUTO_ADMIT == 'true' &&
-      (github.event_name == 'workflow_dispatch' ||
-       (github.event.workflow_run.event == 'pull_request' &&
-        github.event.workflow_run.conclusion == 'success' &&
-        github.event.workflow_run.pull_requests[0].number != null))
+    if: vars.CRL_AUTO_ADMIT == 'true'
     runs-on: ubuntu-24.04
-    timeout-minutes: 6
+    timeout-minutes: 10
     permissions:
       contents: write
       pull-requests: write
-      actions: write
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -40,5 +41,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           CRL_AUTO_ADMIT: ${{ vars.CRL_AUTO_ADMIT }}
-          PR_NUMBER: ${{ inputs.pr || github.event.workflow_run.pull_requests[0].number }}
-        run: .venv/bin/python tools/admission.py --pr "$PR_NUMBER" --apply
+          PR_NUMBER: ${{ inputs.pr || github.event.pull_request.number }}
+          HEAD_SHA: ${{ inputs.head || github.event.pull_request.head.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT_NAME" = schedule ]; then
+            .venv/bin/python tools/admission.py --scan --apply
+          else
+            args=(--pr "$PR_NUMBER" --apply)
+            if [ -n "$HEAD_SHA" ]; then args+=(--head "$HEAD_SHA"); fi
+            .venv/bin/python tools/admission.py "${args[@]}"
+          fi
