@@ -1,0 +1,51 @@
+{
+  "payload": {
+    "profile": "crl-index/0.3",
+    "record_id": "crl:sha256:486a31c1c2a6472ab87db0c8e830908789b725ad68cc3e85eb7a3470695caaac",
+    "record_type": "REVIEW",
+    "problem": "crl:problem:riemann-hypothesis",
+    "title": "Riemann hypothesis finite checker input and historical log archive",
+    "scope": "Static archival artifact review of original source/input availability, localmodule/fixture closure and bounded historical checks; no fresh research execution or conjecture proof acceptance.",
+    "creators": [
+      {
+        "name": "Li Hongmin",
+        "contribution": "Authorized human contribution credit and publication coordination; disclosed AI-assisted source research and Codex archival review/packaging. No independent human proof acceptance."
+      }
+    ],
+    "actor": {
+      "kind": "human-ai",
+      "name": "Li Hongmin with disclosed AI assistance",
+      "public_key": "747a0174620e531c8ca5750719f74a4cd0be5aa61f72d08f435c02cfcfb01eb7"
+    },
+    "created_at": "2026-10-03T19:04:50Z",
+    "basis_snapshot": "sha256:00f6c49fe024f7ad595aeed76215461d4b6d584bf647bad1338c5219a4a196d6",
+    "archive": {
+      "provider": "github-commit",
+      "repository": "https://github.com/Li-Hongmin/citable-research-lineages",
+      "commit": "e56d9e1786017d0090b2e203bb72b3833113f81b",
+      "url": "https://github.com/Li-Hongmin/citable-research-lineages/tree/e56d9e1786017d0090b2e203bb72b3833113f81b",
+      "manifest_path": "publications/rh-reproduction-sources-inputs-v0.1.0/crl-publication.json",
+      "manifest_sha256": "fd5ecd1054e2db1d85fb237b4aac7bbcb5a72509827016bcf0b50048c8f085d8"
+    },
+    "source": null,
+    "rights": {
+      "rights_holder_statement": "User explicitly authorizes confirmed own original four-line text/data CC BY 4.0 and code Apache-2.0, with human contribution credit and disclosed AI roles. Third-party full text and private material excluded.",
+      "license_declared": "CC-BY-4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/"
+    },
+    "relations": [
+      {
+        "type": "reviews",
+        "target": "crl:sha256:900e68c3b88b07d3b25b250500d631afc2ffab56acc01679b63dec314a237d45",
+        "scope": "Static archival artifact review of original source/input availability, localmodule/fixture closure and bounded historical checks; no fresh research execution or conjecture proof acceptance."
+      }
+    ],
+    "discovery_permission": "crl-discovery/1.0",
+    "review": {
+      "outcome": "inconclusive",
+      "method": "artifact-check",
+      "scope": "Static archival artifact review of original source/input availability, localmodule/fixture closure and bounded historical checks; no fresh research execution or conjecture proof acceptance."
+    }
+  },
+  "signature": "2f8ca2730a86c324cbb905c90da50046d86a55ed7f279e7712454d8d347240d78fedebaba729661569b08f19f9755509786185c67c7574e660abca456ed5b100"
+}
