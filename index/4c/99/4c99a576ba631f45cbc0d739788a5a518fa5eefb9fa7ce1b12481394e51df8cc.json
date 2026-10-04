@@ -1,0 +1,51 @@
+{
+  "payload": {
+    "profile": "crl-index/0.3",
+    "record_id": "crl:sha256:4c99a576ba631f45cbc0d739788a5a518fa5eefb9fa7ce1b12481394e51df8cc",
+    "record_type": "REVIEW",
+    "problem": "crl:problem:berge-fulkerson",
+    "title": "Berge-Fulkerson bounded star pivot Fano and literal-input archive",
+    "scope": "Static archival artifact review of original source/input availability, localmodule/fixture closure and bounded historical checks; no fresh research execution or conjecture proof acceptance.",
+    "creators": [
+      {
+        "name": "Li Hongmin",
+        "contribution": "Authorized human contribution credit and publication coordination; disclosed AI-assisted source research and Codex archival review/packaging. No independent human proof acceptance."
+      }
+    ],
+    "actor": {
+      "kind": "human-ai",
+      "name": "Li Hongmin with disclosed AI assistance",
+      "public_key": "747a0174620e531c8ca5750719f74a4cd0be5aa61f72d08f435c02cfcfb01eb7"
+    },
+    "created_at": "2026-10-03T19:04:50Z",
+    "basis_snapshot": "sha256:00f6c49fe024f7ad595aeed76215461d4b6d584bf647bad1338c5219a4a196d6",
+    "archive": {
+      "provider": "github-commit",
+      "repository": "https://github.com/Li-Hongmin/citable-research-lineages",
+      "commit": "e56d9e1786017d0090b2e203bb72b3833113f81b",
+      "url": "https://github.com/Li-Hongmin/citable-research-lineages/tree/e56d9e1786017d0090b2e203bb72b3833113f81b",
+      "manifest_path": "publications/berge-fulkerson-reproduction-sources-inputs-v0.1.0/crl-publication.json",
+      "manifest_sha256": "b5957fc180bd40066f9e23655a77694bd46aaed0762ad1d0dd7841b9b5383187"
+    },
+    "source": null,
+    "rights": {
+      "rights_holder_statement": "User explicitly authorizes confirmed own original four-line text/data CC BY 4.0 and code Apache-2.0, with human contribution credit and disclosed AI roles. Third-party full text and private material excluded.",
+      "license_declared": "CC-BY-4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/"
+    },
+    "relations": [
+      {
+        "type": "reviews",
+        "target": "crl:sha256:01b35e5c1883eae2eccb6b879b89d44e90f615b3db7089d7328fef89590b5551",
+        "scope": "Static archival artifact review of original source/input availability, localmodule/fixture closure and bounded historical checks; no fresh research execution or conjecture proof acceptance."
+      }
+    ],
+    "discovery_permission": "crl-discovery/1.0",
+    "review": {
+      "outcome": "inconclusive",
+      "method": "artifact-check",
+      "scope": "Static archival artifact review of original source/input availability, localmodule/fixture closure and bounded historical checks; no fresh research execution or conjecture proof acceptance."
+    }
+  },
+  "signature": "0f6a20a7f74bc3c168118c579c8d73cb2826b6f01660cda50c970009563bf6f766d4afe4e9229bc06e4b9de00ea4f93a3358b2b98ecd02f67d3f7214079e6309"
+}
