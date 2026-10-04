@@ -1,0 +1,51 @@
+{
+  "payload": {
+    "profile": "crl-index/0.3",
+    "record_id": "crl:sha256:5370d83d37044c3006ca7f44114b119983f6fad8a5bf62de03b7483ad32db277",
+    "record_type": "REVIEW",
+    "problem": "crl:problem:p-vs-np",
+    "title": "MCSP and THR2 original generator fixture and certificate-gap archive",
+    "scope": "Static archival artifact review of original source/input availability, localmodule/fixture closure and bounded historical checks; no fresh research execution or conjecture proof acceptance.",
+    "creators": [
+      {
+        "name": "Li Hongmin",
+        "contribution": "Authorized human contribution credit and publication coordination; disclosed AI-assisted source research and Codex archival review/packaging. No independent human proof acceptance."
+      }
+    ],
+    "actor": {
+      "kind": "human-ai",
+      "name": "Li Hongmin with disclosed AI assistance",
+      "public_key": "747a0174620e531c8ca5750719f74a4cd0be5aa61f72d08f435c02cfcfb01eb7"
+    },
+    "created_at": "2026-10-03T19:04:50Z",
+    "basis_snapshot": "sha256:00f6c49fe024f7ad595aeed76215461d4b6d584bf647bad1338c5219a4a196d6",
+    "archive": {
+      "provider": "github-commit",
+      "repository": "https://github.com/Li-Hongmin/citable-research-lineages",
+      "commit": "e56d9e1786017d0090b2e203bb72b3833113f81b",
+      "url": "https://github.com/Li-Hongmin/citable-research-lineages/tree/e56d9e1786017d0090b2e203bb72b3833113f81b",
+      "manifest_path": "publications/nnp-reproduction-sources-inputs-v0.1.0/crl-publication.json",
+      "manifest_sha256": "c595001809df72668759e492f820557284dd6149fcdc19a7e28acf84d5507c1c"
+    },
+    "source": null,
+    "rights": {
+      "rights_holder_statement": "User explicitly authorizes confirmed own original four-line text/data CC BY 4.0 and code Apache-2.0, with human contribution credit and disclosed AI roles. Third-party full text and private material excluded.",
+      "license_declared": "CC-BY-4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/"
+    },
+    "relations": [
+      {
+        "type": "reviews",
+        "target": "crl:sha256:8af889073f64d966d78ae1cf07e547f32a6074746aed01a39de7ca3f34f4df8c",
+        "scope": "Static archival artifact review of original source/input availability, localmodule/fixture closure and bounded historical checks; no fresh research execution or conjecture proof acceptance."
+      }
+    ],
+    "discovery_permission": "crl-discovery/1.0",
+    "review": {
+      "outcome": "inconclusive",
+      "method": "artifact-check",
+      "scope": "Static archival artifact review of original source/input availability, localmodule/fixture closure and bounded historical checks; no fresh research execution or conjecture proof acceptance."
+    }
+  },
+  "signature": "b6c71598501e0ac49e692cec47afd52f64a3beb816201ec3b30e02c7db13bcc71fe1f558aee8d051b29084a2cd994f2e47c529bfc05639ec04a1c2d33b838400"
+}
