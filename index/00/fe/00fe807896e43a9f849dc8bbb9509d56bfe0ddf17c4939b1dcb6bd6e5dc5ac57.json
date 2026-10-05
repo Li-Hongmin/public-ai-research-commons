@@ -1,0 +1,51 @@
+{
+  "payload": {
+    "profile": "crl-index/0.3",
+    "record_id": "crl:sha256:00fe807896e43a9f849dc8bbb9509d56bfe0ddf17c4939b1dcb6bd6e5dc5ac57",
+    "record_type": "REVIEW",
+    "problem": "crl:problem:p-vs-np",
+    "title": "nnp final supplemental original material archive",
+    "scope": "Static archival artifact-check of positively screened own source, stored input and historical document bytes; no fresh execution or scientific acceptance.",
+    "creators": [
+      {
+        "name": "Li Hongmin",
+        "contribution": "Authorized human contribution credit and publication coordination; disclosed AI-assisted source research and Codex archival review/packaging. No independent human proof acceptance."
+      }
+    ],
+    "actor": {
+      "kind": "human-ai",
+      "name": "Li Hongmin with disclosed AI assistance",
+      "public_key": "747a0174620e531c8ca5750719f74a4cd0be5aa61f72d08f435c02cfcfb01eb7"
+    },
+    "created_at": "2026-10-03T20:45:30Z",
+    "basis_snapshot": "sha256:00f6c49fe024f7ad595aeed76215461d4b6d584bf647bad1338c5219a4a196d6",
+    "archive": {
+      "provider": "github-commit",
+      "repository": "https://github.com/Li-Hongmin/citable-research-lineages",
+      "commit": "018a5ee69b54d662ac26f252cf3864008b02b744",
+      "url": "https://github.com/Li-Hongmin/citable-research-lineages/tree/018a5ee69b54d662ac26f252cf3864008b02b744",
+      "manifest_path": "publications/nnp-final-supplemental-original-materials-v0.1.0/crl-publication.json",
+      "manifest_sha256": "0ad76c756ce2994b978ddeffe216f4e77f315c4e62538c164bbb8f496abbd792"
+    },
+    "source": null,
+    "rights": {
+      "rights_holder_statement": "User explicitly authorizes confirmed own original four-line text/data CC BY 4.0 and code Apache-2.0, with human contribution credit and disclosed AI roles. Third-party full text and private material excluded.",
+      "license_declared": "CC-BY-4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/"
+    },
+    "relations": [
+      {
+        "type": "reviews",
+        "target": "crl:sha256:8af889073f64d966d78ae1cf07e547f32a6074746aed01a39de7ca3f34f4df8c",
+        "scope": "Static archival artifact-check of positively screened own source, stored input and historical document bytes; no fresh execution or scientific acceptance."
+      }
+    ],
+    "discovery_permission": "crl-discovery/1.0",
+    "review": {
+      "outcome": "inconclusive",
+      "method": "artifact-check",
+      "scope": "Static archival artifact-check of positively screened own source, stored input and historical document bytes; no fresh execution or scientific acceptance."
+    }
+  },
+  "signature": "0d3013ab230f0597593890eb12d8f029a4368ba752d88cd01c972a3e9ec0caec119830b714d796f1d845c83beb354b9297f6442124e51bcf9f268ce7e796c60d"
+}
