@@ -13,8 +13,8 @@ your workspace → public fixed-commit/Zenodo publication → signed CRL index e
 
 Participants keep their own research workspace. GitHub is encouraged but not
 required. A contribution becomes part of the durable scientific record when the
-contributor publishes a versioned research package to Zenodo and submits a small
-signed discovery header to an index.
+contributor makes a signed research package public at a fixed full GitHub commit
+or a specific Zenodo Version DOI, then submits a signed discovery header to an index.
 
 > **The Commons indexes research. It does not own it.**
 
@@ -56,6 +56,8 @@ index/
 tools/
   crl.py
   admission.py
+  archive.py
+  contribute.py
 
 tests/
 .github/
@@ -99,28 +101,36 @@ human view. Neither is committed back to `main`.
 
 ## Publish and index
 
-1. Prepare a CRL publication draft in your own workspace.
-2. Sign it locally:
-   ```bash
-   python tools/crl.py keygen --out ~/.crl/identity.key
-   python tools/crl.py sign-publication my-publication.draft.json \
-     --key ~/.crl/identity.key --out crl-publication.json
-   ```
-3. Publish `crl-publication.json` and its research artifacts to Zenodo.
-4. After Zenodo assigns the specific Version DOI:
-   ```bash
-   python tools/crl.py prepare-index crl-publication.json \
-     --doi 10.5281/zenodo.<record> \
-     --zenodo-url https://zenodo.org/records/<record> \
-     --key ~/.crl/identity.key
-   ```
-5. Submit only the generated file under `index/` in a pull request.
+Keep an approved package in a separate staging directory: one signed
+`crl-publication.json` and exactly its declared artifacts. Sign the publication
+with the existing authorized CRL identity using `tools/crl.py sign-publication`.
+Choose actual authors, rights holders and licences before freezing the package.
 
-A personal GitHub repository may be recorded as the optional source workspace,
-pinned to an exact commit.
+For a public GitHub commit archive, with existing `git` and `gh` access:
 
+```bash
+python tools/contribute.py --work ../submission-journal prepare \
+  --package ../approved-package \
+  --archive-repository <owner>/<public-archive> \
+  --index-repository Li-Hongmin/public-ai-research-commons \
+  --contributor-repository <owner>/<existing-commons-fork>
+python tools/contribute.py --work ../submission-journal submit \
+  --key <existing-authorized-key>
+python tools/contribute.py --work ../submission-journal status
+```
+
+`prepare` is local. `submit` is the publishing action: it archives only the
+frozen selection, signs the header with the publication's signer, opens one
+single-file PR and later verifies admission and the public board. Exit 2 means
+pending: repeat `submit` with the same journal to read back. No key is needed
+once the header has been saved. It does not merge PRs or create credentials/forks.
+The archive and index branches are dedicated branches; defaults are never pushed.
+
+An exact public GitHub commit works without Zenodo. Zenodo remains optional:
+use a published **Version DOI**, then the existing `crl.py prepare-index` command.
+A Concept DOI or reserved draft DOI cannot identify the submitted version.
 See [CONTRIBUTING.md](CONTRIBUTING.md), [RIGHTS.md](RIGHTS.md), and
-[docs/PUBLISHING.md](docs/PUBLISHING.md).
+[docs/PUBLISHING.md](docs/PUBLISHING.md) for preparation, recovery and revisions.
 
 ## Rights
 
