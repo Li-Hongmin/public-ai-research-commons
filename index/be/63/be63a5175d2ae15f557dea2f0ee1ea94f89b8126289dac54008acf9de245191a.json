@@ -1,0 +1,51 @@
+{
+  "payload": {
+    "profile": "crl-index/0.3",
+    "record_id": "crl:sha256:be63a5175d2ae15f557dea2f0ee1ea94f89b8126289dac54008acf9de245191a",
+    "record_type": "REVIEW",
+    "problem": "crl:problem:p-vs-np",
+    "title": "THR2 original binary DRAT archive shard 2 of5",
+    "scope": "Static original proof-data byte/framing/provenance REVIEW; not logical certificate validation, fresh solver result or P versus NP acceptance.",
+    "creators": [
+      {
+        "name": "Li Hongmin",
+        "contribution": "Authorized human contribution credit and publication coordination; disclosed AI-assisted source research and Codex archival review/packaging. No independent human proof acceptance."
+      }
+    ],
+    "actor": {
+      "kind": "human-ai",
+      "name": "Li Hongmin with disclosed AI assistance",
+      "public_key": "747a0174620e531c8ca5750719f74a4cd0be5aa61f72d08f435c02cfcfb01eb7"
+    },
+    "created_at": "2026-10-03T19:38:43Z",
+    "basis_snapshot": "sha256:00f6c49fe024f7ad595aeed76215461d4b6d584bf647bad1338c5219a4a196d6",
+    "archive": {
+      "provider": "github-commit",
+      "repository": "https://github.com/Li-Hongmin/citable-research-lineages",
+      "commit": "540fa7569a7daeda67b87e34834bd268a78e9046",
+      "url": "https://github.com/Li-Hongmin/citable-research-lineages/tree/540fa7569a7daeda67b87e34834bd268a78e9046",
+      "manifest_path": "publications/nnp-original-binary-drat-certificates-part2-v0.1.0/crl-publication.json",
+      "manifest_sha256": "c61abed73eeac41fd4a2199985c87920e092fc8565636ee4d70444953023685f"
+    },
+    "source": null,
+    "rights": {
+      "rights_holder_statement": "User explicitly authorizes confirmed own original four-line text/data CC BY 4.0 and code Apache-2.0, with human contribution credit and disclosed AI roles. Third-party full text and private material excluded.",
+      "license_declared": "CC-BY-4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/"
+    },
+    "relations": [
+      {
+        "type": "reviews",
+        "target": "crl:sha256:8af889073f64d966d78ae1cf07e547f32a6074746aed01a39de7ca3f34f4df8c",
+        "scope": "Static original proof-data byte/framing/provenance REVIEW; not logical certificate validation, fresh solver result or P versus NP acceptance."
+      }
+    ],
+    "discovery_permission": "crl-discovery/1.0",
+    "review": {
+      "outcome": "inconclusive",
+      "method": "artifact-check",
+      "scope": "Static original proof-data byte/framing/provenance REVIEW; not logical certificate validation, fresh solver result or P versus NP acceptance."
+    }
+  },
+  "signature": "656f4bd4110d04f8fa33c2b992e6095c08218a781452c3e615337c6f75303f7afa0d36ce4ac8dfaf9a7d70f0cb483d58816427128ec5720a2bebfcc63eec2d05"
+}
