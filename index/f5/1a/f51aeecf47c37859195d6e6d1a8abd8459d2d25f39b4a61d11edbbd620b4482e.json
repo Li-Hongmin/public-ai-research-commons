@@ -1,0 +1,51 @@
+{
+  "payload": {
+    "profile": "crl-index/0.3",
+    "record_id": "crl:sha256:f51aeecf47c37859195d6e6d1a8abd8459d2d25f39b4a61d11edbbd620b4482e",
+    "record_type": "REVIEW",
+    "problem": "crl:problem:p-vs-np",
+    "title": "nnp remaining original proof source and historical body archive",
+    "scope": "Static archival REVIEW of original remaining proof/source/fixture/history body and exact provenance; scientific validity not assessed, no replay or conjecture acceptance.",
+    "creators": [
+      {
+        "name": "Li Hongmin",
+        "contribution": "Authorized human contribution credit and publication coordination; disclosed AI-assisted source research and Codex archival review/packaging. No independent human proof acceptance."
+      }
+    ],
+    "actor": {
+      "kind": "human-ai",
+      "name": "Li Hongmin with disclosed AI assistance",
+      "public_key": "747a0174620e531c8ca5750719f74a4cd0be5aa61f72d08f435c02cfcfb01eb7"
+    },
+    "created_at": "2026-10-03T19:54:51Z",
+    "basis_snapshot": "sha256:00f6c49fe024f7ad595aeed76215461d4b6d584bf647bad1338c5219a4a196d6",
+    "archive": {
+      "provider": "github-commit",
+      "repository": "https://github.com/Li-Hongmin/citable-research-lineages",
+      "commit": "dc83995e9b6481d64a3cd7ed49e81b7c05e5f2ed",
+      "url": "https://github.com/Li-Hongmin/citable-research-lineages/tree/dc83995e9b6481d64a3cd7ed49e81b7c05e5f2ed",
+      "manifest_path": "publications/nnp-remaining-original-bodies-v0.1.0/crl-publication.json",
+      "manifest_sha256": "3d5916b3261b3618f47ca4a0fd03f4292ddb96c6548b07721150f85397eda023"
+    },
+    "source": null,
+    "rights": {
+      "rights_holder_statement": "User explicitly authorizes confirmed own original four-line text/data CC BY 4.0 and code Apache-2.0, with human contribution credit and disclosed AI roles. Third-party full text and private material excluded.",
+      "license_declared": "CC-BY-4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/"
+    },
+    "relations": [
+      {
+        "type": "reviews",
+        "target": "crl:sha256:8af889073f64d966d78ae1cf07e547f32a6074746aed01a39de7ca3f34f4df8c",
+        "scope": "Static archival REVIEW of original remaining proof/source/fixture/history body and exact provenance; scientific validity not assessed, no replay or conjecture acceptance."
+      }
+    ],
+    "discovery_permission": "crl-discovery/1.0",
+    "review": {
+      "outcome": "inconclusive",
+      "method": "artifact-check",
+      "scope": "Static archival REVIEW of original remaining proof/source/fixture/history body and exact provenance; scientific validity not assessed, no replay or conjecture acceptance."
+    }
+  },
+  "signature": "a1f7edc0e4e72160d13e75285a34032d095529c319a7f07635f0fb061ab25cd78509a2077ecbffaf244abcbe641ee343c29cd7f98e124791ffa0e8cda20d9604"
+}
