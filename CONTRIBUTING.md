@@ -1,101 +1,86 @@
 # Contributing
 
-The Commons is an index, not a submission venue for research bodies.
+The Commons stores discovery headers. Keep research bodies and exploratory work
+in your own workspace; do not submit papers, proof code, datasets or notebooks
+as scientific index PRs.
 
-## Keep research in your own workspace
+## Prepare an inspectable contribution
 
-Personal GitHub repositories are encouraged but not required. Internal notes,
-code, prompts, computations, and manuscripts stay under your control.
+Read [RIGHTS.md](RIGHTS.md), the registered root in `registry/problems.json`, and
+current board/index context. Before extending an entry, use:
 
-Do **not** submit proof text, datasets, papers, notebooks, or research code to this
-repository as CRL scientific submissions.
+```bash
+python tools/crl.py context crl:sha256:<record>
+```
+
+Choose a bounded QUESTION, RESULT or REVIEW. Cite exact versions and the parts
+actually used, including challenges and limitations. Record actual human/AI
+contributions, author consent where needed, rights holders and deliberate
+licences. A signature and index check do not establish these declarations.
+
+Edit a publication draft outside staging, then sign with an existing authorized
+identity whose private key stays outside every repository and package:
+
+```bash
+python tools/crl.py sign-publication ../publication.draft.json \
+  --key <existing-authorized-key> \
+  --out ../approved-package/crl-publication.json
+python tools/crl.py validate-publication ../approved-package/crl-publication.json
+```
+
+Staging must contain exactly this manifest and its declared artifact paths.
+Artifact hashes are byte SHA256. The signed manifest digest is JCS SHA256.
+Missing identity, publication authority, author consent or reuse permission must
+be resolved through the contributor's trusted human/account workflow; the client
+cannot grant them. Missing registered roots require a separate registry review.
+Preparation can continue locally while those prerequisites are unresolved.
 
 ## Publish first, index second
 
-A durable contribution has two steps:
+Use either a public full GitHub commit or a published Zenodo Version DOI. Zenodo
+is optional. The [publishing guide](docs/PUBLISHING.md) contains the shortest
+GitHub client commands and manual/Zenodo alternatives.
 
-1. make a signed `crl-publication.json` plus inspectable artifacts publicly readable
-   at a fixed full GitHub commit, or publish them under a Zenodo Version DOI;
-2. submit one signed discovery header pointing to that exact archive.
+`tools/contribute.py` bridges existing `git`, `gh`, `crl.py` and the bounded public
+archive verifier. Use your already authorized public archive repository and an
+existing public fork of the index (or the index itself when already authorized).
+It creates dedicated branches, signs with the same publication key and opens a
+PR containing only `index/<2 hex>/<2 hex>/<64 hex>.json`. It never pushes a default
+branch, creates accounts/forks/keys, enables admission/Pages or manually merges.
+GitHub credentials control repository operations; the CRL key signs research.
+The generic Git commit author is transport metadata, not research authorship.
 
-See [the GitHub commit flow](docs/PUBLISHING.md#github-commit-snapshot-without-a-doi)
-for dedicated package-directory conventions.
+The signed header declares an exact archive, root, scoped relations, creators,
+rights and the narrow `crl-discovery/1.0` permission for the header. It does not
+transfer research ownership. GitHub commit hosting does not promise DOI-style
+preservation.
 
-The Commons stores only the second object.
+## Relations and changes
 
-### Sign the publication manifest
+- QUESTION: exactly one `subproblem-of`.
+- RESULT: at least one `addresses`; a correction can add `revises`.
+- REVIEW: exactly one `reviews`.
+- Withdrawal: RESULT with `result_kind: withdrawal`, `answer_scope: none`, and
+  exactly one `withdraws` relation to the same signer's earlier publication.
 
-```bash
-python tools/crl.py keygen --out ~/.crl/identity.key
-cp examples/publication.draft.json ../my-publication.draft.json
-python tools/crl.py sign-publication ../my-publication.draft.json \
-  --key ~/.crl/identity.key --out ../crl-publication.json
-python tools/crl.py validate-publication ../crl-publication.json
-```
+Every relation needs a precise `scope`. A later REVIEW can criticize public work
+without that author's permission. Joint authorship and reuse rights are separate.
+[Revision and withdrawal examples](docs/PUBLISHING.md#revision-and-withdrawal)
+show append-only updates; old objects are never silently replaced.
 
-Keep the private key outside every repository.
+References to valid CRL IDs absent from this index are allowed; views expose
+partial context rather than treating absence as nonexistence.
 
-### Publish to Zenodo
+## Admission and read-back
 
-Upload `crl-publication.json` and the artifacts another researcher needs to
-inspect the contribution. Choose the publication licence deliberately; the
-Commons does not choose one for you.
+The optional automatic lane accepts one new regular JSON index file. It never
+auto-admits code, workflows, registry, policy or multiple files. Trusted base code
+checks schema/signatures/typed relations and anonymously fetches the bounded exact
+public archive and declared artifacts as data. It never executes artifacts or
+assesses scientific truth.
 
-### Prepare the discovery header
-
-```bash
-python tools/crl.py prepare-index ../crl-publication.json \
-  --doi 10.5281/zenodo.<record> \
-  --zenodo-url https://zenodo.org/records/<record> \
-  --source-repository https://github.com/<owner>/<repo> \
-  --source-commit <40-hex-commit> \
-  --key ~/.crl/identity.key
-```
-
-The source flags are optional but, when used, must be supplied together and point
-to an exact commit.
-
-The command writes:
-
-```text
-index/<2 hex>/<2 hex>/<64 hex>.json
-```
-
-Open a PR containing **only that new file**.
-
-## What the signed header means
-
-It declares the CRL record ID, exact Zenodo Version DOI, root problem, creators,
-rights statement, declared licence, optional pinned source repository, and
-scoped scientific relations. It also explicitly grants `crl-discovery/1.0`,
-which applies only to the discovery header.
-
-Indexing does not transfer ownership of the research body to the Commons.
-
-## Scientific relations
-
-- `QUESTION`: exactly one `subproblem-of`.
-- `RESULT`: at least one `addresses`; corrections use `revises`.
-- `REVIEW`: exactly one `reviews`.
-
-Every relation includes a required `scope`. A reference means no more than that
-scope states.
-
-A later REVIEW may criticize public work without the earlier author's permission.
-Joint authorship, project-branded papers, reuse permissions, and commercial rights
-are separate matters covered by [RIGHTS.md](RIGHTS.md).
-
-## Partial federation
-
-An entry may refer to a valid CRL ID absent from this particular index. That is
-allowed. Clients must mark the context as partial rather than interpreting absence
-from one index as nonexistence.
-
-## Automatic admission
-
-The optional lane accepts only one new regular JSON file at the exact
-content-addressed `index/` path. It never auto-admits code, workflows, policy,
-registry changes, or multiple files.
-
-Admission checks structure, signatures and exact public archive bytes using
-trusted base code. It never executes artifacts or decides scientific validity.
+A PR opening or green diagnostic check is not admission. Confirm the exact header
+on the pinned default branch; public board/source/snapshot agreement is a separate
+step and may lag. Scientific validity remains `not-assessed`. Follow
+[maintainer setup](docs/SETUP.md) before enabling the lane; local mocked tests do
+not establish an independently operated contributor or production fork E2E.
